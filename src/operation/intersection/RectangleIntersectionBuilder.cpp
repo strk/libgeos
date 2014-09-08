@@ -14,42 +14,18 @@
 
 #include <geos/operation/intersection/RectangleIntersectionBuilder.h>
 
-/**
- * \brief Destructor
- */
-
 RectangleIntersectionBuilder::~RectangleIntersectionBuilder()
 {
-  BOOST_FOREACH(auto * ptr, polygons)
-	delete ptr;
-  BOOST_FOREACH(auto * ptr, lines)
-	delete ptr;
-  BOOST_FOREACH(auto * ptr, points)
-	delete ptr;
+  for (std::list<geom::Polygon *>::iterator i=polygons.begin(), e=polygons.end(); i!=e; ++i)
+	  delete *i;
+  for (std::list<geom::LineString *>::iterator i=lines.begin(), e=lines.end(); i!=e; ++i)
+	  delete *i;
+  for (std::list<geom::Point *>::iterator i=points.begin(), e=points.end(); i!=e; ++i)
+	  delete *i;
 }
 
-/**
- * \brief Reconnect disjointed parts
- *
- * When we clip a LinearRing we may get multiple linestrings.
- * Often the first and last ones can be reconnected to simplify
- * output.
- *
- * Sample clip with a rectangle 0,0 --> 10,10 without reconnecting:
- *
- *   Input:   POLYGON ((5 10,0 0,10 0,5 10))
- *   Output:  MULTILINESTRING ((5 10,0 0),(10 0,5 10))
- *   Desired: LINESTRING (10 0,5 10,0 0)
- *
- * TODO: If there is a very sharp spike from inside the rectangle
- *       outside, and then back in, it is possible that the
- *       intersection points at the edge are equal. In this
- *       case we could reconnect the linestrings. The task is
- *       the same we're already doing for the 1st/last linestrings,
- *       we'd just do it for any adjacent pair as well.
- */
-
-void RectangleIntersectionBuilder::reconnect()
+void
+RectangleIntersectionBuilder::reconnect()
 {
   // Nothing to reconnect if there aren't at least two lines
   if(lines.size() < 2)
@@ -82,18 +58,16 @@ void RectangleIntersectionBuilder::reconnect()
 }
 
 
-/**
- * \brief Export parts to another container
- */
-
 void RectangleIntersectionBuilder::release(RectangleIntersectionBuilder & theParts)
 {
-  BOOST_FOREACH(auto * ptr, polygons)
-	theParts.add(ptr);
-  BOOST_FOREACH(auto * ptr, lines)
-	theParts.add(ptr);
-  BOOST_FOREACH(auto * ptr, points)
-	theParts.add(ptr);
+  for (std::list<geom::Polygon *>::iterator i=polygons.begin(), e=polygons.end(); i!=e; ++i)
+	  theParts.add(*i);
+
+  for (std::list<geom::LineString *>::iterator i=lines.begin(), e=lines.end(); i!=e; ++i)
+	  theParts.add(*i);
+
+  for (std::list<geom::Point *>::iterator i=points.begin(), e=points.end(); i!=e; ++i)
+	  theParts.add(*i);
 
   clear();
 }
@@ -168,97 +142,25 @@ geom::Geometry * RectangleIntersectionBuilder::internalBuild() const
 
   std::size_t n = polygons.size() + lines.size() + points.size();
 
-  // We wish to avoid NULL pointers due to more prone segfault mistakes
-
   if(n == 0)
-	return new geom::GeometryCollection;
+	return new geom::GeometryCollection; // TODO: GeometryFactory!!
 
-  // Simplify to LineString, Polygon or Point if possible
-  if(n==1)
-	{
-	  if(polygons.size() == 1)
-		return polygons.front();
-	  else if(lines.size() == 1)
-		return lines.front();
-	  else
-		return points.front();
-	}
+  std::vector<Geometry *> *geoms = new std::vector<Geometry *>;
+  geoms->reserve(n);
 
-  // Simplify to MultiLineString, MultiPolygon or MultiPoint if possible
+  for (std::list<geom::Polygon *>::iterator i=polygons.begin(), e=polygons.end(); i!=e; ++i)
+      geoms->push_back(*i);
+  polygons.clear();
 
-  if(!polygons.empty() && lines.empty() && points.empty())
-	{
-	  auto * geom = new geom::MultiPolygon;
-	  BOOST_FOREACH(auto * ptr, polygons)
-		geom->addGeometryDirectly(ptr);
-	  return geom;
-	}
+  for (std::list<geom::LineString *>::iterator i=lines.begin(), e=lines.end(); i!=e; ++i)
+      geoms->push_back(*i);
+  lines.clear();
 
-  if(!lines.empty() && polygons.empty() && points.empty())
-	{
-	  auto * geom = new geom::MultiLineString;
-	  BOOST_FOREACH(auto * ptr, lines)
-		geom->addGeometryDirectly(ptr);
-	  return geom;
-	}
+  for (std::list<geom::Point *>::iterator i=points.begin(), e=points.end(); i!=e; ++i)
+      geoms->push_back(*i);
+  points.clear();
 
-  if(!points.empty() && lines.empty() && polygons.empty())
-	{
-	  auto * geom = new geom::MultiPoint;
-	  BOOST_FOREACH(auto * ptr, points)
-		geom->addGeometryDirectly(ptr);
-	  return geom;
-	}
-
-  // A generic collection must be used, the types differ too much.
-  // The order should be kept the same for the benefit of
-  // regression tests: polygons, lines, points
-
-  auto * geom = new geom::GeometryCollection;
-
-  // Add a Polygon or a MultiPolygon
-  if(!polygons.empty())
-	{
-	  if(polygons.size() == 1)
-		geom->addGeometryDirectly(polygons.front());
-	  else
-		{
-		  auto * tmp = new geom::MultiPolygon;
-		  BOOST_FOREACH(auto * ptr, polygons)
-			tmp->addGeometryDirectly(ptr);
-		  geom->addGeometryDirectly(tmp);
-		}
-	}
-
-  // Add a LineString or a MultiLineString
-  if(!lines.empty())
-	{
-	  if(lines.size() == 1)
-		geom->addGeometryDirectly(lines.front());
-	  else
-		{
-		  auto * tmp = new geom::MultiLineString;
-		  BOOST_FOREACH(auto * ptr, lines)
-			tmp->addGeometryDirectly(ptr);
-		  geom->addGeometryDirectly(tmp);
-		}
-	}
-
-  // Add a Point or a MultiPoint
-  if(!points.empty())
-	{
-	  if(points.size() == 1)
-		geom->addGeometryDirectly(points.front());
-	  else
-		{
-		  auto * tmp = new geom::MultiPoint;
-		  BOOST_FOREACH(auto * ptr, points)
-			tmp->addGeometryDirectly(ptr);
-		  geom->addGeometryDirectly(tmp);
-		}
-	}
-
-  return geom;
+  return (*geoms)[0]->getFactory()->buildGeometry(geoms);
 }
 
 /**

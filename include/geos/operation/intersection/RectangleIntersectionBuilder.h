@@ -71,7 +71,32 @@ private:
 
   // Utility methods needed for that, also outside this class
   void reconnectPolygons(const Rectangle & rect);
+
+  /**
+   * Reconnect disjointed parts
+   *
+   * When we clip a LinearRing we may get multiple linestrings.
+   * Often the first and last ones can be reconnected to simplify
+   * output.
+   *
+   * Sample clip with a rectangle 0,0 --> 10,10 without reconnecting:
+   *
+   *   Input:   POLYGON ((5 10,0 0,10 0,5 10))
+   *   Output:  MULTILINESTRING ((5 10,0 0),(10 0,5 10))
+   *   Desired: LINESTRING (10 0,5 10,0 0)
+   *
+   * TODO: If there is a very sharp spike from inside the rectangle
+   *       outside, and then back in, it is possible that the
+   *       intersection points at the edge are equal. In this
+   *       case we could reconnect the linestrings. The task is
+   *       the same we're already doing for the 1st/last linestrings,
+   *       we'd just do it for any adjacent pair as well.
+   */
   void reconnect();
+
+  /**
+   * Export parts to another container
+   */
   void release(RectangleIntersectionBuilder & parts);
 
   // Adding Geometry components

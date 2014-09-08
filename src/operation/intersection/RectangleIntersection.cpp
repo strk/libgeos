@@ -379,7 +379,7 @@ RectangleIntersection::clip_linestring_parts(const geom::LineString * gi,
 
 void
 RectangleIntersection::clip_polygon_to_linestrings(const geom::Polygon * g,
-								 RectangleIntersectionBuilder & parts,
+								 RectangleIntersectionBuilder & toParts,
 								 const Rectangle & rect)
 {
   if(g == NULL || g->isEmpty())
@@ -389,7 +389,7 @@ RectangleIntersection::clip_polygon_to_linestrings(const geom::Polygon * g,
 
   // Clip the exterior first to see what's going on
 
-  //RectangleIntersectionBuilder parts;
+  RectangleIntersectionBuilder parts;
 
   // If everything was in, just clone the original
 
@@ -419,7 +419,7 @@ RectangleIntersection::clip_polygon_to_linestrings(const geom::Polygon * g,
 	  // Move them to the actual parts collector, clearing parts.
 
 	  parts.reconnect();
-	  parts.release(parts);
+	  parts.release(toParts);
 	}
 
   // Handle the holes now:
@@ -439,7 +439,7 @@ RectangleIntersection::clip_polygon_to_linestrings(const geom::Polygon * g,
 	  else if(!parts.empty())
 		{
 		  parts.reconnect();
-		  parts.release(parts);
+		  parts.release(toParts);
 		}
 	}
 }
@@ -450,7 +450,7 @@ RectangleIntersection::clip_polygon_to_linestrings(const geom::Polygon * g,
 
 void
 RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
-							  RectangleIntersectionBuilder & parts,
+							  RectangleIntersectionBuilder & toParts,
 							  const Rectangle & rect)
 {
   if(g == NULL || g->isEmpty())
@@ -458,7 +458,7 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
 
   // Clip the exterior first to see what's going on
 
-  //RectangleIntersectionBuilder parts;
+  RectangleIntersectionBuilder parts;
 
   // If everything was in, just clone the original
 
@@ -512,7 +512,7 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
 	}
 
   parts.reconnectPolygons(rect);
-  parts.release(parts);
+  parts.release(toParts);
 
 }
 
