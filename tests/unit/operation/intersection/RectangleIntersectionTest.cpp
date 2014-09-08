@@ -78,9 +78,19 @@ namespace tut
           ensure(ok);
         }
 
+        void doClipTest(const char* inputWKT, const std::string& expectedWKT, const Rectangle& rect)
+        {
+          GeomPtr g = readWKT(inputWKT);
+          ensure(g.get());
+          GeomPtr obt = RectangleIntersection::clip(*g,rect);
+          ensure(obt.get());
+          bool ok = isEqual(*readWKT(expectedWKT), *obt);
+          ensure(ok);
+        }
+
     };
 
-    typedef test_group<test_rectangleintersectiontest_data> group;
+    typedef test_group<test_rectangleintersectiontest_data, 256> group;
     typedef group::object object;
 
     group test_rectangleintersectiontest_group("geos::operation::intersection::RectangleIntersection");
@@ -804,9 +814,8 @@ namespace tut
     }
 
 
-#if 0
     // inside
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<76>()
     {
       doClipTest(
         "LINESTRING (1 1,1 9,9 9,9 1)",
@@ -816,7 +825,7 @@ namespace tut
     }
 
     // outside
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<77>()
     {
       doClipTest(
         "LINESTRING (-1 -9,-1 11,9 11)",
@@ -826,7 +835,7 @@ namespace tut
     }
 
     // go in from left
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<78>()
     {
       doClipTest(
         "LINESTRING (-1 5,5 5,9 9)",
@@ -836,7 +845,7 @@ namespace tut
     }
 
     // go out from right
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<79>()
     {
       doClipTest(
         "LINESTRING (5 5,8 5,12 5)",
@@ -846,7 +855,7 @@ namespace tut
     }
 
     // go in and out
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<80>()
     {
       doClipTest(
         "LINESTRING (5 -1,5 5,1 2,-3 2,1 6)",
@@ -856,7 +865,7 @@ namespace tut
     }
 
     // go along left edge
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<81>()
     {
       doClipTest(
         "LINESTRING (0 3,0 5,0 7)",
@@ -866,7 +875,7 @@ namespace tut
     }
 
     // go out from left edge
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<82>()
     {
       doClipTest(
         "LINESTRING (0 3,0 5,-1 7)",
@@ -876,7 +885,7 @@ namespace tut
     }
 
     // go in from left edge
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<83>()
     {
       doClipTest(
         "LINESTRING (0 3,0 5,2 7)",
@@ -886,7 +895,7 @@ namespace tut
     }
 
     // triangle corner at bottom left corner
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<84>()
     {
       doClipTest(
         "LINESTRING (2 1,0 0,1 2)",
@@ -896,7 +905,7 @@ namespace tut
     }
 
     // go from in to edge and back in
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<85>()
     {
       doClipTest(
         "LINESTRING (3 3,0 3,0 5,2 7)",
@@ -906,7 +915,7 @@ namespace tut
     }
 
     // go from in to edge and then straight out
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<86>()
     {
       doClipTest(
         "LINESTRING (5 5,10 5,20 5)",
@@ -916,7 +925,7 @@ namespace tut
     }
 
     // triangle corner at left edge
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<87>()
     {
       doClipTest(
         "LINESTRING (3 3,0 6,3 9)",
@@ -926,7 +935,7 @@ namespace tut
     }
 
     // polygon completely inside
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<88>()
     {
       doClipTest(
         "POLYGON ((5 5,5 6,6 6,6 5,5 5))",
@@ -936,7 +945,7 @@ namespace tut
     }
 
     // polygon completely outside
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<89>()
     {
       doClipTest(
         "POLYGON ((15 15,15 16,16 16,16 15,15 15))",
@@ -946,7 +955,7 @@ namespace tut
     }
 
     // polygon surrounds the rectangle
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<90>()
     {
       doClipTest(
         "POLYGON ((-1 -1,-1 11,11 11,11 -1,-1 -1))",
@@ -956,7 +965,7 @@ namespace tut
     }
 
     // polygon cuts the rectangle
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<91>()
     {
       doClipTest(
         "POLYGON ((-1 -1,-1 5,5 5,5 -1,-1 -1))",
@@ -966,7 +975,7 @@ namespace tut
     }
 
     // polygon with hole cuts the rectangle
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<92>()
     {
       doClipTest(
         "POLYGON ((-2 -2,-2 5,5 5,5 -2,-2 -2), (3 3,4 4,4 2,3 3))",
@@ -976,7 +985,7 @@ namespace tut
     }
 
     // rectangle cuts both the polygon and the hole
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<93>()
     {
       doClipTest(
         "POLYGON ((-2 -2,-2 5,5 5,5 -2,-2 -2), (-1 -1,3 1,3 3,-1 -1))",
@@ -986,7 +995,7 @@ namespace tut
     }
 
     // Triangle at two corners and one edge
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<94>()
     {
       doClipTest(
         "POLYGON ((0 0,10 0,5 10,0 0))",
@@ -996,7 +1005,7 @@ namespace tut
     }
 
     // Same triangle with another starting point
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<95>()
     {
       doClipTest(
         "POLYGON ((5 10,0 0,10 0,5 10))",
@@ -1006,7 +1015,7 @@ namespace tut
     }
 
     // Triangle intersection at corner and edge
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<96>()
     {
       doClipTest(
         "POLYGON ((-5 -5,5 5,5 -5,-5 -5))",
@@ -1016,7 +1025,7 @@ namespace tut
     }
 
     // All triangles fully inside
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<97>()
     {
       doClipTest(
         "POLYGON ((0 0,0 10,10 10,0 0))",
@@ -1025,7 +1034,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<98>()
     {
       doClipTest(
         "POLYGON ((0 5,0 10,10 10,0 5))",
@@ -1034,7 +1043,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<99>()
     {
       doClipTest(
         "POLYGON ((0 10,10 10,5 0,0 10))",
@@ -1043,7 +1052,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<100>()
     {
       doClipTest(
         "POLYGON ((0 10,10 10,5 5,0 10))",
@@ -1052,7 +1061,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<101>()
     {
       doClipTest(
         "POLYGON ((0 10,5 10,0 5,0 10))",
@@ -1061,7 +1070,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<102>()
     {
       doClipTest(
         "POLYGON ((0 10,10 5,0 5,0 10))",
@@ -1070,7 +1079,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<103>()
     {
       doClipTest(
         "POLYGON ((0 10,10 0,0 5,0 10))",
@@ -1079,7 +1088,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<104>()
     {
       doClipTest(
         "POLYGON ((0 10,5 0,0 5,0 10))",
@@ -1088,7 +1097,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<105>()
     {
       doClipTest(
         "POLYGON ((0 10,5 5,0 5,0 10))",
@@ -1097,7 +1106,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<106>()
     {
       doClipTest(
         "POLYGON ((0 10,7 7,3 3,0 10))",
@@ -1106,7 +1115,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<107>()
     {
       doClipTest(
         "POLYGON ((0 10,5 5,5 0,0 10))",
@@ -1115,7 +1124,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<108>()
     {
       doClipTest(
         "POLYGON ((0 10,10 5,5 0,0 10))",
@@ -1124,7 +1133,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<109>()
     {
       doClipTest(
         "POLYGON ((2 5,5 7,7 5,2 5))",
@@ -1133,7 +1142,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<110>()
     {
       doClipTest(
         "POLYGON ((2 5,5 10,7 5,2 5))",
@@ -1142,7 +1151,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<111>()
     {
       doClipTest(
         "POLYGON ((0 5,5 10,5 5,0 5))",
@@ -1151,7 +1160,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<112>()
     {
       doClipTest(
         "POLYGON ((0 5,5 10,10 5,0 5))",
@@ -1160,7 +1169,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<113>()
     {
       doClipTest(
         "POLYGON ((0 5,5 7,10 5,0 5))",
@@ -1170,7 +1179,7 @@ namespace tut
     }
 
     // No points inside, one intersection
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<114>()
     {
       doClipTest(
         "POLYGON ((-5 10,0 15,0 10,-5 10))",
@@ -1179,7 +1188,8 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+#if 0
+    template<> template<> void object::test<115>()
     {
       doClipTest(
         "POLYGON ((-5 10,0 5,-5 0,-5 10))",
@@ -1189,7 +1199,7 @@ namespace tut
     }
 
     // No points inside, two intersections
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<116>()
     {
       doClipTest(
         "POLYGON ((-5 5,0 10,0 0,-5 5))",
@@ -1198,7 +1208,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<117>()
     {
       doClipTest(
         "POLYGON ((-5 5,0 10,0 5,-5 5))",
@@ -1207,7 +1217,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<118>()
     {
       doClipTest(
         "POLYGON ((-5 5,0 7,0 3,-5 5))",
@@ -1217,7 +1227,7 @@ namespace tut
     }
 
     // One point inside
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<119>()
     {
       doClipTest(
         "POLYGON ((5 5,-5 0,-5 10,5 5))",
@@ -1226,7 +1236,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<120>()
     {
       doClipTest(
         "POLYGON ((5 0,-5 0,-5 10,5 0))",
@@ -1235,7 +1245,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<121>()
     {
       doClipTest(
         "POLYGON ((10 0,-10 0,-10 10,10 0))",
@@ -1244,7 +1254,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<122>()
     {
       doClipTest(
         "POLYGON ((5 0,-5 5,-5 10,5 0))",
@@ -1253,7 +1263,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<123>()
     {
       doClipTest(
         "POLYGON ((10 5,-10 0,-10 10,10 5))",
@@ -1262,7 +1272,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<124>()
     {
       doClipTest(
         "POLYGON ((10 10,-10 0,-10 5,10 10))",
@@ -1271,7 +1281,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<125>()
     {
       doClipTest(
         "POLYGON ((5 5,-5 -5,-5 15,5 5))",
@@ -1280,7 +1290,9 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+#endif
+#if 0
+    template<> template<> void object::test<126>()
     {
       doClipTest(
         "POLYGON ((10 5,-10 -5,-10 15,10 5))",
@@ -1289,7 +1301,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<127>()
     {
       doClipTest(
         "POLYGON ((5 0,-5 0,-5 20,5 0))",
@@ -1298,7 +1310,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<128>()
     {
       doClipTest(
         "POLYGON ((10 0,-10 0,-10 20,10 0))",
@@ -1307,7 +1319,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<129>()
     {
       doClipTest(
         "POLYGON ((5 5,-10 5,0 15,5 5))",
@@ -1316,7 +1328,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<130>()
     {
       doClipTest(
         "POLYGON ((5 5,-5 -5,0 15,5 5))",
@@ -1325,7 +1337,7 @@ namespace tut
       );
     }
 
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<131>()
     {
       doClipTest(
         "POLYGON ((5 5,-15 -20,-15 30,5 5))",
@@ -1333,9 +1345,11 @@ namespace tut
         Rectangle(0,0,10,10)
       );
     }
+#endif
 
+#if 0 // toxic
     // Two points inside
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<132>()
     {
       doClipTest(
         "POLYGON ((5 7,5 3,-5 5,5 7))",
@@ -1343,8 +1357,10 @@ namespace tut
         Rectangle(0,0,10,10)
       );
     }
+#endif
 
-    template<> template<> void object::test<2>()
+#if 0 // toxic
+    template<> template<> void object::test<133>()
     {
       doClipTest(
         "POLYGON ((5 7,5 3,-5 13,5 7))",
@@ -1352,8 +1368,10 @@ namespace tut
         Rectangle(0,0,10,10)
       );
     }
+#endif
 
-    template<> template<> void object::test<2>()
+#if 0 // toxic
+    template<> template<> void object::test<134>()
     {
       doClipTest(
         "POLYGON ((6 6,4 4,-4 14,6 6))",
@@ -1361,9 +1379,10 @@ namespace tut
         Rectangle(0,0,10,10)
       );
     }
+#endif
 
     // Polygon with hole which surrounds the rectangle
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<135>()
     {
       doClipTest(
         "POLYGON ((-2 -2,-2 12,12 12,12 -2,-2 -2),(-1 -1,11 -1,11 11,-1 11,-1 -1))",
@@ -1373,7 +1392,7 @@ namespace tut
     }
 
     // Polygon surrounding the rect, but with a hole inside the rect
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<136>()
     {
       doClipTest(
         "POLYGON ((-2 -2,-2 12,12 12,12 -2,-2 -2),(1 1,9 1,9 9,1 9,1 1))",
@@ -1382,8 +1401,9 @@ namespace tut
       );
     }
 
+#if 0 // toxic
     // Polygon with hole cut at the right corner
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<137>()
     {
       doClipTest(
         "POLYGON ((5 5,15 5,15 -5,5 -5,5 5),(8 1,8 -1,9 -1,9 1,8 1))",
@@ -1391,9 +1411,10 @@ namespace tut
         Rectangle(0,0,10,10)
       );
     }
+#endif
 
     // Polygon going around a corner
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<138>()
     {
       doClipTest(
         "POLYGON ((-6 5,5 5,5 -6,-6 5))",
@@ -1403,7 +1424,7 @@ namespace tut
     }
 
     // Hole in a corner
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<139>()
     {
       doClipTest(
         "POLYGON ((-15 -15,-15 15,15 15,15 -15,-15 -15),(-5 5,-5 -5,5 -5,5 5,-5 5))",
@@ -1413,7 +1434,7 @@ namespace tut
     }
 
     // Hole going around a corner
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<140>()
     {
       doClipTest(
         "POLYGON ((-15 -15,-15 15,15 15,15 -15,-15 -15),(-6 5,5 -6,5 5,-6 5))",
@@ -1423,7 +1444,7 @@ namespace tut
     }
 
     // Surround the rectangle, hole outside rectangle
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<141>()
     {
       doClipTest(
         "POLYGON ((-15 -15,-15 15,15 15,15 -15,-15 -15),(-5 5,-6 5,-6 6,-5 6,-5 5))",
@@ -1433,7 +1454,7 @@ namespace tut
     }
 
     // Surround the rectangle, hole outside rectangle but shares edge
-    template<> template<> void object::test<2>()
+    template<> template<> void object::test<142>()
     {
       doClipTest(
         "POLYGON ((-15 -15,-15 15,15 15,15 -15,-15 -15),(0 5,-1 5,-1 6,0 6,0 5))",
@@ -1441,8 +1462,5 @@ namespace tut
         Rectangle(0,0,10,10)
       );
     }
-
-        
-#endif
 
 }
