@@ -23,7 +23,7 @@ namespace intersection { // geos::operation::intersection
    * Create a clipping rectangle
    */
 
-  Rectangle(double x1, double y1, double x2, double y2)
+  Rectangle::Rectangle(double x1, double y1, double x2, double y2)
 	: xMin(x1)
 	, yMin(y1)
 	, xMax(x2)
@@ -31,7 +31,7 @@ namespace intersection { // geos::operation::intersection
   {
 	if(xMin >= xMax || yMin >= yMax)
 	  {
-		throw util::IllegalArgumentException("Clipping rectangle must be non-empty")
+		throw util::IllegalArgumentException("Clipping rectangle must be non-empty");
 	  }
   }
 

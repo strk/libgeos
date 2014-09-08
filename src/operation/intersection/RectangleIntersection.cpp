@@ -15,22 +15,24 @@
 #include <geos/operation/intersection/RectangleIntersection.h>
 #include <geos/operation/intersection/Rectangle.h>
 #include <geos/operation/intersection/RectangleIntersectionBuilder.h>
+#include <geos/geom/GeometryFactory.h>
+#include <geos/geom/CoordinateSequenceFactory.h>
+#include <geos/geom/CoordinateSequence.h>
+#include <geos/geom/Polygon.h>
+#include <geos/geom/MultiPolygon.h>
+#include <geos/geom/Point.h>
+#include <geos/geom/Geometry.h>
+#include <geos/geom/LineString.h>
+#include <geos/geom/LinearRing.h>
 #include <list>
 #include <stdexcept>
 
 using geos::operation::intersection::Rectangle;
 using geos::operation::intersection::RectangleIntersectionBuilder;
-
+using namespace geos::geom;
 namespace geos {
 namespace operation { // geos::operation
 namespace intersection { // geos::operation::intersection
-
-// Forward declaration needed since two functions call each other
-
-void clip_geom(const geom::Geometry * g,
-			   RectangleIntersectionBuilder & parts,
-			   const Rectangle & rect,
-			   bool keep_polygons);
 
 /**
  * \brief Test if two coordinates are different
@@ -93,7 +95,8 @@ void clip_to_edges(double & x1, double & y1,
  * Here outGeom may also be a MultiPoint
  */
 
-void clip_point(const geom::Point * g,
+void
+RectangleIntersection::clip_point(const geom::Point * g,
 				RectangleIntersectionBuilder & parts,
 				const Rectangle & rect)
 {
@@ -104,7 +107,7 @@ void clip_point(const geom::Point * g,
   double y = g->getY();
   
   if(rect.position(x,y) == Rectangle::Inside)
-	parts.add(new geom::Point(x,y));
+	parts.add(dynamic_cast<geom::Point*>(g->clone()));
 }
 
 /**
@@ -114,18 +117,26 @@ void clip_point(const geom::Point * g,
  * anything to RectangleIntersectionBuilder.
  */
 
-bool clip_linestring_parts(const geom::LineString * g,
+bool
+RectangleIntersection::clip_linestring_parts(const geom::LineString * gi,
 						   RectangleIntersectionBuilder & parts,
 						   const Rectangle & rect)
 {
-  int n = g->getNumPoints();
+  using namespace geos::geom;
 
-  if(g == NULL || n<1)
+  int n = gi->getNumPoints();
+
+  const geom::GeometryFactory* gf = gi->getFactory();
+  const geom::CoordinateSequenceFactory* cf = gf->getCoordinateSequenceFactory();
+
+  if(gi == NULL || n<1)
 	return false;
 
   // For shorthand code
 
-  const geom::LineString & g = *g;
+  std::vector<Coordinate> cs;
+  gi->getCoordinatesRO()->toVector(cs);
+  //const geom::CoordinateSequence &cs = *(gi->getCoordinatesRO());
 
   // Keep a record of the point where a line segment entered
   // the rectangle. If the boolean is set, we must insert
@@ -144,8 +155,8 @@ bool clip_linestring_parts(const geom::LineString * g,
 	{
 	  // Establish initial position
 
-	  double x = g.getX(i);
-	  double y = g.getY(i);
+	  double x = cs[i].x;
+	  double y = cs[i].y;
 	  Rectangle::Position pos = rect.position(x,y);
 
 	  if(pos == Rectangle::Outside)
@@ -156,35 +167,32 @@ bool clip_linestring_parts(const geom::LineString * g,
 		  ++i;	// we already know it is outside
 
 		  if(x < rect.xmin())
-			while(i < n && g.getX(i) < rect.xmin())
+			while(i < n && cs[i].x < rect.xmin())
 			  ++i;
 
 		  else if(x > rect.xmax())
-			while(i < n && g.getX(i) > rect.xmax())
+			while(i < n && cs[i].x > rect.xmax())
 			  ++i;
 
 		  else if(y < rect.ymin())
-			while(i < n && g.getY(i) < rect.ymin())
+			while(i < n && cs[i].y < rect.ymin())
 			  ++i;
 
 		  else if(y > rect.ymax())
-			while(i < n && g.getY(i) > rect.ymax())
+			while(i < n && cs[i].y > rect.ymax())
 			  ++i;
 
 		  if(i >= n)
 			return false;
 
 		  // Establish new position
-
-		  x = g.getX(i);
-		  y = g.getY(i);
+		  x = cs[i].x;
+		  y = cs[i].y;
 		  pos = rect.position(x,y);
 
 		  // Handle all possible cases
-
-		  x0 = g.getX(i-1);
-		  y0 = g.getY(i-1);
-
+		  x0 = cs[i-1].x;
+		  y0 = cs[i-1].y;
 		  clip_to_edges(x0,y0,x,y,rect);
 
 		  if(pos == Rectangle::Inside)
@@ -212,9 +220,11 @@ bool clip_linestring_parts(const geom::LineString * g,
 				  !Rectangle::onSameEdge(prev_pos,pos)	// discard if travels along edge
 				  )
 				{
-				  geom::LineString * line = new geom::LineString;
-				  line->addPoint(x0,y0);
-				  line->addPoint(x,y);
+          std::vector<Coordinate> *coords = new std::vector<Coordinate>(2);
+				  (*coords)[0] = Coordinate(x0,y0);
+				  (*coords)[1] = Coordinate(x,y);
+          CoordinateSequence *seq = cf->create(coords);
+				  geom::LineString * line = gf->createLineString(seq);
 				  parts.add(line);
 				}
 
@@ -253,8 +263,8 @@ bool clip_linestring_parts(const geom::LineString * g,
 
 		  while(!go_outside && ++i<n)
 			{
-			  x = g.getX(i);
-			  y = g.getY(i);
+			  x = cs[i].x;
+			  y = cs[i].y;
 
 			  Rectangle::Position prev_pos = pos;
 			  pos = rect.position(x,y);
@@ -268,29 +278,31 @@ bool clip_linestring_parts(const geom::LineString * g,
 				  go_outside = true;
 
 				  // Clip the outside point to edges
-				  clip_to_edges(x, y, g.getX(i-1), g.getY(i-1), rect);
+				  clip_to_edges(x, y, cs[i-1].x, cs[i-1].y, rect);
 				  pos = rect.position(x,y);
 
 				  // Does the line exit through the inside of the box?
 
-				  bool through_box = (different(x,y,g.getX(i),g.getY(i)) &&
+				  bool through_box = (different(x,y,cs[i].x,cs[i].y) &&
 									  !Rectangle::onSameEdge(prev_pos,pos));
 
 				  // Output a LineString if it at least one segment long
 
 				  if(start_index < i-1 || add_start || through_box)
 					{
-					  geom::LineString * line = new geom::LineString();
+            std::vector<Coordinate> *coords = new std::vector<Coordinate>();
 					  if(add_start)
 						{
-						  line->addPoint(x0,y0);
+						  coords->push_back(Coordinate(x0, y0));
 						  add_start = false;
 						}
-					  line->addSubLineString(&g, start_index, i-1);
+					  //line->addSubLineString(&g, start_index, i-1);
+            coords->insert(coords->end(), cs.begin()+start_index, cs.begin()+i);
 
-					  if(through_box)
-						line->addPoint(x,y);
+					  if(through_box) coords->push_back(Coordinate(x,y));
 
+            CoordinateSequence *seq = cf->create(coords);
+            geom::LineString * line = gf->createLineString(seq);
 					  parts.add(line);
 					}
 				  // And continue main loop on the outside
@@ -303,13 +315,19 @@ bool clip_linestring_parts(const geom::LineString * g,
 					  // Nothing to output if we haven't been elsewhere
 					  if(start_index < i-1 || add_start)
 						{
-						  geom::LineString * line = new geom::LineString();
+              std::vector<Coordinate> *coords = new std::vector<Coordinate>();
+						  //geom::LineString * line = new geom::LineString();
 						  if(add_start)
 							{
-							  line->addPoint(x0,y0);
+							  //line->addPoint(x0,y0);
+						    coords->push_back(Coordinate(x0, y0));
 							  add_start = false;
 							}
-						  line->addSubLineString(&g, start_index, i-1);
+						  //line->addSubLineString(&g, start_index, i-1);
+              coords->insert(coords->end(), cs.begin()+start_index, cs.begin()+i);
+
+              CoordinateSequence *seq = cf->create(coords);
+              geom::LineString * line = gf->createLineString(seq);
 						  parts.add(line);
 						}
 					  start_index = i;
@@ -332,13 +350,19 @@ bool clip_linestring_parts(const geom::LineString * g,
 		  if(!go_outside &&						// meaning data ended
 			 (start_index < i-1 || add_start))	// meaning something has to be generated
 			{
-			  geom::LineString * line = new geom::LineString();
+        std::vector<Coordinate> *coords = new std::vector<Coordinate>();
+			  //geom::LineString * line = new geom::LineString();
 			  if(add_start)
 				{
-				  line->addPoint(x0,y0);
+				  //line->addPoint(x0,y0);
+					coords->push_back(Coordinate(x0, y0));
 				  add_start = false;
 				}
-			  line->addSubLineString(&g, start_index, i-1);
+			  //line->addSubLineString(&g, start_index, i-1);
+        coords->insert(coords->end(), cs.begin()+start_index, cs.begin()+i);
+
+        CoordinateSequence *seq = cf->create(coords);
+        geom::LineString * line = gf->createLineString(seq);
 			  parts.add(line);
 			}
 
@@ -353,22 +377,25 @@ bool clip_linestring_parts(const geom::LineString * g,
  * \brief Clip polygon, do not close clipped ones
  */
 
-void clip_polygon_to_linestrings(const geom::Polygon * g,
+void
+RectangleIntersection::clip_polygon_to_linestrings(const geom::Polygon * g,
 								 RectangleIntersectionBuilder & parts,
 								 const Rectangle & rect)
 {
-  if(g == NULL || g->IsEmpty())
+  if(g == NULL || g->isEmpty())
 	return;
+
+  const geom::GeometryFactory* gf = g->getFactory();
 
   // Clip the exterior first to see what's going on
 
-  RectangleIntersectionBuilder parts;
+  //RectangleIntersectionBuilder parts;
 
   // If everything was in, just clone the original
 
   if(clip_linestring_parts(g->getExteriorRing(), parts, rect))
 	{
-	  parts.add(static_cast<geom::Polygon *>(g->clone()));
+	  parts.add(dynamic_cast<geom::Polygon *>(g->clone()));
 	  return;
 	}
 
@@ -382,7 +409,7 @@ void clip_polygon_to_linestrings(const geom::Polygon * g,
 	  // smaller than the exterior ring just checking the holes
 	  // separately could be faster.
 
-	  if(g->getNumInteriorRings() == 0)
+	  if(g->getNumInteriorRing() == 0)
 		return;
 
 	}
@@ -399,13 +426,14 @@ void clip_polygon_to_linestrings(const geom::Polygon * g,
   // - Clipped ones become linestrings
   // - Intact ones become new polygons without holes
 
-  for(int i=0, n=g->getNumInteriorRings(); i<n; ++i)
+  for(int i=0, n=g->getNumInteriorRing(); i<n; ++i)
 	{
-	  if(clip_linestring_parts(g->getInteriorRing(i), parts, rect))
+	  if(clip_linestring_parts(g->getInteriorRingN(i), parts, rect))
 		{
-		  auto * poly = new geom::Polygon;
-		  auto * hole = g->getInteriorRing(i);
-		  poly->addRing(const_cast<geom::LinearRing *>(hole));  // clones, becomes exterior
+      // clones
+		  LinearRing *hole = dynamic_cast<LinearRing*>(g->getInteriorRingN(i)->clone());
+      // becomes exterior
+		  Polygon *poly = gf->createPolygon(hole, 0);
 		  parts.add(poly);
 		}
 	  else if(!parts.empty())
@@ -420,22 +448,23 @@ void clip_polygon_to_linestrings(const geom::Polygon * g,
  * \brief Clip polygon, close clipped ones
  */
 
-void clip_polygon_to_polygons(const geom::Polygon * g,
+void
+RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
 							  RectangleIntersectionBuilder & parts,
 							  const Rectangle & rect)
 {
-  if(g == NULL || g->IsEmpty())
+  if(g == NULL || g->isEmpty())
 	return;
 
   // Clip the exterior first to see what's going on
 
-  RectangleIntersectionBuilder parts;
+  //RectangleIntersectionBuilder parts;
 
   // If everything was in, just clone the original
 
   if(clip_linestring_parts(g->getExteriorRing(), parts, rect))
 	{
-	  parts.add(static_cast<geom::Polygon *>(g->clone()));
+	  parts.add(dynamic_cast<geom::Polygon *>(g->clone()));
 	  return;
 	}
 
@@ -454,13 +483,13 @@ void clip_polygon_to_polygons(const geom::Polygon * g,
   // - Intact ones become holes in new polygons formed by exterior parts
 
 
-  for(int i=0, n=g->getNumInteriorRings(); i<n; ++i)
+  for(int i=0, n=g->getNumInteriorRing(); i<n; ++i)
 	{
 	  RectangleIntersectionBuilder holeparts;
-	  if(clip_linestring_parts(g->getInteriorRing(i), holeparts, rect))
+	  if(clip_linestring_parts(g->getInteriorRingN(i), holeparts, rect))
 		{
 		  auto * poly = new geom::Polygon;
-		  auto * hole = g->getInteriorRing(i);
+		  auto * hole = g->getInteriorRingN(i);
 		  poly->addRing(const_cast<geom::LinearRing *>(hole));  // clones
 		  parts.add(poly);
 		}
@@ -473,7 +502,7 @@ void clip_polygon_to_polygons(const geom::Polygon * g,
 			}
 		  else
 			{
-			  if(inside(*g->getInteriorRing(i), rect.xmin(), rect.ymin()))
+			  if(inside(*g->getInteriorRingN(i), rect.xmin(), rect.ymin()))
 				{
 				  // Completely inside the hole
 				  return;
@@ -510,13 +539,13 @@ void clip_linestring(const geom::LineString * g,
 					 RectangleIntersectionBuilder & parts,
 					 const Rectangle & rect)
 {
-  if(g == NULL || g->IsEmpty())
+  if(g == NULL || g->isEmpty())
 	return;
 
   // If everything was in, just clone the original
 
   if(clip_linestring_parts(g, parts, rect))
-	parts.add(static_cast<geom::LineString *>(g->clone()));
+	parts.add(dynamic_cast<geom::LineString *>(g->clone()));
   
 }
 
@@ -528,11 +557,11 @@ void clip_multipoint(const geom::MultiPoint * g,
 					 RectangleIntersectionBuilder & parts,
 					 const Rectangle & rect)
 {
-  if(g == NULL || g->IsEmpty())
+  if(g == NULL || g->isEmpty())
 	return;
   for(int i=0, n=g->getNumGeometries(); i<n; ++i)
 	{
-	  clip_point(static_cast<const geom::Point *>(g->getGeometryRef(i)),
+	  clip_point(dynamic_cast<const geom::Point *>(g->getGeometryN(i)),
 				 parts, rect);
 	}
 }
@@ -545,12 +574,12 @@ void clip_multilinestring(const geom::MultiLineString * g,
 						  RectangleIntersectionBuilder & parts,
 						  const Rectangle & rect)
 {
-  if(g == NULL || g->IsEmpty())
+  if(g == NULL || g->isEmpty())
 	return;
   
   for(int i=0, n=g->getNumGeometries(); i<n; ++i)
 	{
-	  clip_linestring(static_cast<const geom::LineString *>(g->getGeometryRef(i)),
+	  clip_linestring(dynamic_cast<const geom::LineString *>(g->getGeometryN(i)),
 					  parts, rect);
 	}
 }
@@ -559,17 +588,18 @@ void clip_multilinestring(const geom::MultiLineString * g,
  * \brief Clip geometry
  */
 
-void clip_multipolygon(const geom::MultiPolygon * g,
+void
+RectangleIntersection::clip_multipolygon(const geom::MultiPolygon * g,
 					   RectangleIntersectionBuilder & parts,
 					   const Rectangle & rect,
 					   bool keep_polygons)
 {
-  if(g == NULL || g->IsEmpty())
+  if(g == NULL || g->isEmpty())
 	return;
 
   for(int i=0, n=g->getNumGeometries(); i<n; ++i)
 	{
-	  clip_polygon(static_cast<const geom::Polygon *>(g->getGeometryRef(i)),
+	  clip_polygon(dynamic_cast<const geom::Polygon *>(g->getGeometryN(i)),
 				   parts, rect, keep_polygons);
 	}
 }
@@ -578,17 +608,19 @@ void clip_multipolygon(const geom::MultiPolygon * g,
  * \brief Clip  geometry
  */
 
-void clip_geometrycollection(const geom::GeometryCollection * g,
+void
+RectangleIntersection::clip_geometrycollection(
+               const geom::GeometryCollection * g,
 							 RectangleIntersectionBuilder & parts,
 							 const Rectangle & rect,
 							 bool keep_polygons)
 {
-  if(g == NULL || g->IsEmpty())
+  if(g == NULL || g->isEmpty())
 	return;
   
   for(int i=0, n=g->getNumGeometries(); i<n; ++i)
 	{
-	  clip_geom(g->getGeometryRef(i),
+	  clip_geom(g->getGeometryN(i),
 				parts, rect, keep_polygons);
 	}
 }
@@ -597,7 +629,8 @@ void clip_geometrycollection(const geom::GeometryCollection * g,
  * \brief Clip geometry to output geometry
  */
 
-void clip_geom(const geom::Geometry * g,
+void
+RectangleIntersection::clip_geom(const geom::Geometry * g,
 			   RectangleIntersectionBuilder & parts,
 			   const Rectangle & rect,
 			   bool keep_polygons)
@@ -607,19 +640,19 @@ void clip_geom(const geom::Geometry * g,
   switch(id)
 	{
 	case wkbPoint:
-	  return clip_point(static_cast<const geom::Point *>(g), parts, rect);
+	  return clip_point(dynamic_cast<const geom::Point *>(g), parts, rect);
 	case wkbLineString:
-	  return clip_linestring(static_cast<const geom::LineString *>(g), parts, rect);
+	  return clip_linestring(dynamic_cast<const geom::LineString *>(g), parts, rect);
 	case wkbPolygon:
-	  return clip_polygon(static_cast<const geom::Polygon *>(g), parts, rect, keep_polygons);
+	  return clip_polygon(dynamic_cast<const geom::Polygon *>(g), parts, rect, keep_polygons);
 	case wkbMultiPoint:
-	  return clip_multipoint(static_cast<const geom::MultiPoint *>(g), parts, rect);
+	  return clip_multipoint(dynamic_cast<const geom::MultiPoint *>(g), parts, rect);
 	case wkbMultiLineString:
-	  return clip_multilinestring(static_cast<const geom::MultiLineString *>(g), parts, rect);
+	  return clip_multilinestring(dynamic_cast<const geom::MultiLineString *>(g), parts, rect);
 	case wkbMultiPolygon:
-	  return clip_multipolygon(static_cast<const geom::MultiPolygon *>(g), parts, rect, keep_polygons);
+	  return clip_multipolygon(dynamic_cast<const geom::MultiPolygon *>(g), parts, rect, keep_polygons);
 	case wkbGeometryCollection:
-	  return clip_geometrycollection(static_cast<const geom::GeometryCollection *>(g), parts, rect, keep_polygons);
+	  return clip_geometrycollection(dynamic_cast<const geom::GeometryCollection *>(g), parts, rect, keep_polygons);
 	case wkbLinearRing:
 	  throw std::runtime_error("Direct clipping of LinearRings is not supported");
 	case wkbNone:
@@ -645,7 +678,8 @@ void clip_geom(const geom::Geometry * g,
  * \return Empty GeometryCollection if the result is empty
  */
 
-geom::Geometry * clipBoundary(const geom::Geometry & g, const Rectangle & rect)
+geom::Geometry *
+RectangleIntersection::clipBoundary(const geom::Geometry & g, const Rectangle & rect)
 {
   RectangleIntersectionBuilder parts;
 

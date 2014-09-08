@@ -25,11 +25,16 @@
 // Forward declarations
 namespace geos {
   namespace geom {
-	class Geometry;
+	  class Point;
+	  class Polygon;
+	  class MultiPolygon;
+	  class LineString;
+	  class Geometry;
   }
   namespace operation {
 	namespace intersection {
 	  class Rectangle;
+	  class RectangleIntersectionBuilder;
 	}
   }
 }
@@ -87,6 +92,34 @@ class GEOS_DLL RectangleIntersection
 
   static geom::Geometry * clipBoundary(const geom::Geometry & geom,
 									   const Rectangle & rect);
+
+private:
+
+  void clip_geom(const geom::Geometry * g,
+           RectangleIntersectionBuilder & parts,
+           const Rectangle & rect,
+           bool keep_polygons);
+
+  void clip_point(const geom::Point * g,
+				RectangleIntersectionBuilder & parts,
+				const Rectangle & rect);
+
+  void clip_multipolygon(const geom::MultiPolygon * g,
+					   RectangleIntersectionBuilder & parts,
+					   const Rectangle & rect,
+					   bool keep_polygons);
+
+  void clip_polygon_to_linestrings(const geom::Polygon * g,
+								 RectangleIntersectionBuilder & parts,
+								 const Rectangle & rect);
+
+  void clip_polygon_to_polygons(const geom::Polygon * g,
+							  RectangleIntersectionBuilder & parts,
+							  const Rectangle & rect);
+
+  bool clip_linestring_parts(const geom::LineString * gi,
+               RectangleIntersectionBuilder & parts,
+               const Rectangle & rect);
 
 }; // class RectangleIntersection
 
