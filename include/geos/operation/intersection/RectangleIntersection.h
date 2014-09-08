@@ -64,7 +64,6 @@ namespace intersection { // geos::operation::intersection
  * be properly closed, or the algorithm may not terminate.
  *
  */
-
 class GEOS_DLL RectangleIntersection
 {
  public:
@@ -77,7 +76,6 @@ class GEOS_DLL RectangleIntersection
    * @return the clipped geometry
    * @return NULL if the geometry is outside the {@link Rectangle}
    */
-
   static geom::Geometry * clip(const geom::Geometry & geom,
 							   const Rectangle & rect);
 
@@ -89,7 +87,6 @@ class GEOS_DLL RectangleIntersection
    * @return the clipped geometry
    * @return NULL if the geometry is outside the {@link Rectangle}
    */
-
   static geom::Geometry * clipBoundary(const geom::Geometry & geom,
 									   const Rectangle & rect);
 

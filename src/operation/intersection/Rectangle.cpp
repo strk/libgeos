@@ -14,6 +14,11 @@
 
 #include <geos/operation/intersection/Rectangle.h>
 #include <geos/util/IllegalArgumentException.h>
+#include <geos/geom/Polygon.h>
+#include <geos/geom/GeometryFactory.h>
+#include <geos/geom/CoordinateSequenceFactory.h>
+#include <geos/geom/CoordinateSequence.h>
+#include <geos/geom/Coordinate.h>
 
 namespace geos {
 namespace operation { // geos::operation
@@ -33,6 +38,20 @@ namespace intersection { // geos::operation::intersection
 	  {
 		throw util::IllegalArgumentException("Clipping rectangle must be non-empty");
 	  }
+  }
+
+  geom::Polygon*
+  Rectangle::toGeometry(const geom::GeometryFactory &f) const
+  {
+    const geom::CoordinateSequenceFactory *csf = f.getCoordinateSequenceFactory();
+    geom::CoordinateSequence *seq = csf->create(5, 2);
+    seq->setAt(geom::Coordinate(xMin, yMin), 0);
+    seq->setAt(geom::Coordinate(xMin, yMax), 1);
+    seq->setAt(geom::Coordinate(xMax, yMax), 2);
+    seq->setAt(geom::Coordinate(xMax, yMin), 3);
+    seq->setAt(seq->getAt(0), 4); // close
+    geom::LinearRing* ls = f.createLinearRing(seq);
+    return f.createPolygon(ls, 0);
   }
 
 } // namespace geos::operation::intersection

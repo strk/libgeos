@@ -15,6 +15,7 @@
 #include <geos/operation/intersection/RectangleIntersection.h>
 #include <geos/operation/intersection/Rectangle.h>
 #include <geos/operation/intersection/RectangleIntersectionBuilder.h>
+#include <geos/operation/predicate/RectangleIntersects.h>
 #include <geos/geom/GeometryFactory.h>
 #include <geos/geom/CoordinateSequenceFactory.h>
 #include <geos/geom/CoordinateSequence.h>
@@ -471,8 +472,12 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
   // If there were no intersections, the outer ring might be
   // completely outside.
 
-  if(parts.empty() && !Fmi::::inside(*g->getExteriorRing(), rect.xmin(), rect.ymin()))
-	return;
+  if( parts.empty() ) {
+    using geos::operation::predicate::RectangleIntersects;
+    std::auto_ptr<geom::Polygon> rectPoly ( rect.toGeometry(*g->getFactory()) );
+    if ( !RectangleIntersects::intersects(*rectPoly, *g->getExteriorRing()) )
+	    return;
+  }
 
   // Must do this to make sure all end points are on the edges
 

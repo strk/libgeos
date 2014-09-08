@@ -25,7 +25,9 @@
 // Forward declarations
 namespace geos {
   namespace geom {
+	class GeometryFactory;
 	class Geometry;
+	class Polygon;
   }
 }
 
@@ -85,6 +87,13 @@ class GEOS_DLL Rectangle
    */
 
   double ymax() const { return yMax; }
+
+  /**
+   * \@return the rectangle as a polygon geometry
+   *
+   * Ownership transferred to caller
+   */
+	geom::Polygon* toGeometry(const geom::GeometryFactory &f) const;
 
   /**
    * @brief Position with respect to a clipping rectangle
