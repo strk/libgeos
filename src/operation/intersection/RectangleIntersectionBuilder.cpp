@@ -16,6 +16,7 @@
 #include <geos/operation/intersection/RectangleIntersectionBuilder.h>
 #include <geos/geom/CoordinateSequenceFactory.h>
 #include <geos/geom/GeometryFactory.h>
+#include <geos/geom/GeometryCollection.h>
 #include <geos/geom/Polygon.h>
 #include <geos/geom/Point.h>
 #include <geos/geom/LineString.h>
@@ -107,7 +108,7 @@ void RectangleIntersectionBuilder::add(geom::Point * thePoint)
   points.push_back(thePoint);
 }
 
-geom::Geometry *
+std::auto_ptr<geom::Geometry>
 RectangleIntersectionBuilder::build()
 {
   // Total number of objects
@@ -115,7 +116,7 @@ RectangleIntersectionBuilder::build()
   std::size_t n = polygons.size() + lines.size() + points.size();
 
   if(n == 0)
-	return _gf.createGeometryCollection(); 
+	return std::auto_ptr<Geometry>(_gf.createGeometryCollection());
 
   std::vector<Geometry *> *geoms = new std::vector<Geometry *>;
   geoms->reserve(n);
@@ -132,7 +133,9 @@ RectangleIntersectionBuilder::build()
       geoms->push_back(*i);
   points.clear();
 
-  return (*geoms)[0]->getFactory()->buildGeometry(geoms);
+  return std::auto_ptr<Geometry>(
+    (*geoms)[0]->getFactory()->buildGeometry(geoms)
+  );
 }
 
 /**

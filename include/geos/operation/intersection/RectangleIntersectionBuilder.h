@@ -22,6 +22,7 @@
 #pragma warning(disable: 4251) // warning C4251: needs to have dll-interface to be used by clients of class
 #endif
 
+#include <memory>
 #include <list>
 #include <vector>
 
@@ -73,7 +74,7 @@ private:
   /**
    * \brief Build the result geometry from partial results and clean up
    */
-  geom::Geometry * build();
+  std::auto_ptr<geom::Geometry> build();
 
   /**
    * \brief Build polygons from parts left by clipping one

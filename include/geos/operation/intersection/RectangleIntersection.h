@@ -17,6 +17,8 @@
 
 #include <geos/export.h>
 
+#include <memory>
+
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable: 4251) // warning C4251: needs to have dll-interface to be used by clients of class
@@ -81,7 +83,7 @@ class GEOS_DLL RectangleIntersection
    * @return the clipped geometry
    * @return NULL if the geometry is outside the {@link Rectangle}
    */
-  static geom::Geometry * clip(const geom::Geometry & geom,
+  static std::auto_ptr<geom::Geometry> clip(const geom::Geometry & geom,
 							   const Rectangle & rect);
 
   /**
@@ -96,16 +98,16 @@ class GEOS_DLL RectangleIntersection
    * @return the clipped geometry
    * @return NULL if the geometry is outside the {@link Rectangle}
    */
-  static geom::Geometry * clipBoundary(const geom::Geometry & geom,
+  static std::auto_ptr<geom::Geometry> clipBoundary(const geom::Geometry & geom,
 									   const Rectangle & rect);
 
 private:
 
   RectangleIntersection(const geom::Geometry& geom, const Rectangle& rect);
 
-  geom::Geometry * clipBoundary();
+  std::auto_ptr<geom::Geometry> clipBoundary();
 
-  geom::Geometry * clip();
+  std::auto_ptr<geom::Geometry> clip();
 
   const geom::Geometry &_geom;
   const Rectangle &_rect;

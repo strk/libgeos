@@ -640,14 +640,14 @@ RectangleIntersection::clip_geom(const geom::Geometry * g,
 }
 
 /* public static */
-geom::Geometry *
+std::auto_ptr<geom::Geometry>
 RectangleIntersection::clipBoundary(const geom::Geometry & g, const Rectangle & rect)
 {
   RectangleIntersection ri(g,rect);
   return ri.clipBoundary();
 }
 
-geom::Geometry *
+std::auto_ptr<geom::Geometry>
 RectangleIntersection::clipBoundary()
 {
   RectangleIntersectionBuilder parts(*_gf);
@@ -659,14 +659,14 @@ RectangleIntersection::clipBoundary()
 }
 
 /* public static */
-geom::Geometry *
+std::auto_ptr<geom::Geometry>
 RectangleIntersection::clip(const geom::Geometry & g, const Rectangle & rect)
 {
   RectangleIntersection ri(g,rect);
   return ri.clip();
 }
 
-geom::Geometry *
+std::auto_ptr<geom::Geometry>
 RectangleIntersection::clip()
 {
   RectangleIntersectionBuilder parts(*_gf);
@@ -679,8 +679,9 @@ RectangleIntersection::clip()
 
 RectangleIntersection::RectangleIntersection(const geom::Geometry& geom, const Rectangle& rect)
   : _geom(geom), _rect(rect),
-    _gf(geom.getFactory()), _csf(_gf->getCoordinateSequenceFactory())
+    _gf(geom.getFactory())
 {
+  _csf = _gf->getCoordinateSequenceFactory();
 }
 
 } // namespace geos::operation::intersection
