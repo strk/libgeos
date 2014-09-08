@@ -28,6 +28,7 @@ namespace geos {
 	class GeometryFactory;
 	class Geometry;
 	class Polygon;
+	class LinearRing;
   }
 }
 
@@ -93,7 +94,9 @@ class GEOS_DLL Rectangle
    *
    * Ownership transferred to caller
    */
-	geom::Polygon* toGeometry(const geom::GeometryFactory &f) const;
+	geom::Polygon* toPolygon(const geom::GeometryFactory &f) const;
+
+	geom::LinearRing* toLinearRing(const geom::GeometryFactory &f) const;
 
   /**
    * @brief Position with respect to a clipping rectangle

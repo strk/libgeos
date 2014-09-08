@@ -41,7 +41,14 @@ namespace intersection { // geos::operation::intersection
   }
 
   geom::Polygon*
-  Rectangle::toGeometry(const geom::GeometryFactory &f) const
+  Rectangle::toPolygon(const geom::GeometryFactory &f) const
+  {
+    geom::LinearRing* ls = toLinearRing(f);
+    return f.createPolygon(ls, 0);
+  }
+
+  geom::LinearRing*
+  Rectangle::toLinearRing(const geom::GeometryFactory &f) const
   {
     const geom::CoordinateSequenceFactory *csf = f.getCoordinateSequenceFactory();
     geom::CoordinateSequence *seq = csf->create(5, 2);
@@ -50,8 +57,7 @@ namespace intersection { // geos::operation::intersection
     seq->setAt(geom::Coordinate(xMax, yMax), 2);
     seq->setAt(geom::Coordinate(xMax, yMin), 3);
     seq->setAt(seq->getAt(0), 4); // close
-    geom::LinearRing* ls = f.createLinearRing(seq);
-    return f.createPolygon(ls, 0);
+    return f.createLinearRing(seq);
   }
 
 } // namespace geos::operation::intersection

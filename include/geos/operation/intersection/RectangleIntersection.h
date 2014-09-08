@@ -26,10 +26,15 @@
 namespace geos {
   namespace geom {
 	  class Point;
+	  class MultiPoint;
 	  class Polygon;
 	  class MultiPolygon;
 	  class LineString;
+	  class MultiLineString;
 	  class Geometry;
+	  class GeometryCollection;
+	  class GeometryFactory;
+	  class CoordinateSequenceFactory;
   }
   namespace operation {
 	namespace intersection {
@@ -82,6 +87,10 @@ class GEOS_DLL RectangleIntersection
   /**
    * \brief Clip boundary of a geometry with a rectangle
    *
+   *
+   * Any polygon which intersects the rectangle will be converted to
+   * a polyline or a multipolyline - including the holes.
+   *
    * @param geom a {@link Geometry}
    * @param rect a {@link Rectangle}
    * @return the clipped geometry
@@ -92,6 +101,17 @@ class GEOS_DLL RectangleIntersection
 
 private:
 
+  RectangleIntersection(const geom::Geometry& geom, const Rectangle& rect);
+
+  geom::Geometry * clipBoundary();
+
+  geom::Geometry * clip();
+
+  const geom::Geometry &_geom;
+  const Rectangle &_rect;
+  const geom::GeometryFactory *_gf;
+  const geom::CoordinateSequenceFactory *_csf;
+
   void clip_geom(const geom::Geometry * g,
            RectangleIntersectionBuilder & parts,
            const Rectangle & rect,
@@ -101,10 +121,33 @@ private:
 				RectangleIntersectionBuilder & parts,
 				const Rectangle & rect);
 
+  void clip_multipoint(const geom::MultiPoint * g,
+					 RectangleIntersectionBuilder & parts,
+					 const Rectangle & rect);
+
+  void clip_linestring(const geom::LineString * g,
+					 RectangleIntersectionBuilder & parts,
+					 const Rectangle & rect);
+
+  void clip_multilinestring(const geom::MultiLineString * g,
+						  RectangleIntersectionBuilder & parts,
+						  const Rectangle & rect);
+
+  void clip_polygon(const geom::Polygon * g,
+				  RectangleIntersectionBuilder & parts,
+				  const Rectangle & rect,
+				  bool keep_polygons);
+
   void clip_multipolygon(const geom::MultiPolygon * g,
 					   RectangleIntersectionBuilder & parts,
 					   const Rectangle & rect,
 					   bool keep_polygons);
+
+  void clip_geometrycollection(
+               const geom::GeometryCollection * g,
+							 RectangleIntersectionBuilder & parts,
+							 const Rectangle & rect,
+							 bool keep_polygons);
 
   void clip_polygon_to_linestrings(const geom::Polygon * g,
 								 RectangleIntersectionBuilder & parts,
@@ -114,6 +157,13 @@ private:
 							  RectangleIntersectionBuilder & parts,
 							  const Rectangle & rect);
 
+
+  /**
+   * \brief Clip geometry.
+   *
+   * Returns true if the geometry was fully inside, and does not output
+   * anything to RectangleIntersectionBuilder.
+   */
   bool clip_linestring_parts(const geom::LineString * gi,
                RectangleIntersectionBuilder & parts,
                const Rectangle & rect);

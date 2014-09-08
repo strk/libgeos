@@ -12,6 +12,7 @@
  *
  **********************************************************************/
 
+#include <geos/algorithm/CGAlgorithms.h>
 #include <geos/operation/intersection/RectangleIntersection.h>
 #include <geos/operation/intersection/Rectangle.h>
 #include <geos/operation/intersection/RectangleIntersectionBuilder.h>
@@ -25,6 +26,7 @@
 #include <geos/geom/Geometry.h>
 #include <geos/geom/LineString.h>
 #include <geos/geom/LinearRing.h>
+#include <geos/util/UnsupportedOperationException.h>
 #include <list>
 #include <stdexcept>
 
@@ -111,13 +113,6 @@ RectangleIntersection::clip_point(const geom::Point * g,
 	parts.add(dynamic_cast<geom::Point*>(g->clone()));
 }
 
-/**
- * \brief Clip geometry.
- *
- * Returns true if the geometry was fully inside, and does not output
- * anything to RectangleIntersectionBuilder.
- */
-
 bool
 RectangleIntersection::clip_linestring_parts(const geom::LineString * gi,
 						   RectangleIntersectionBuilder & parts,
@@ -126,9 +121,6 @@ RectangleIntersection::clip_linestring_parts(const geom::LineString * gi,
   using namespace geos::geom;
 
   int n = gi->getNumPoints();
-
-  const geom::GeometryFactory* gf = gi->getFactory();
-  const geom::CoordinateSequenceFactory* cf = gf->getCoordinateSequenceFactory();
 
   if(gi == NULL || n<1)
 	return false;
@@ -224,8 +216,8 @@ RectangleIntersection::clip_linestring_parts(const geom::LineString * gi,
           std::vector<Coordinate> *coords = new std::vector<Coordinate>(2);
 				  (*coords)[0] = Coordinate(x0,y0);
 				  (*coords)[1] = Coordinate(x,y);
-          CoordinateSequence *seq = cf->create(coords);
-				  geom::LineString * line = gf->createLineString(seq);
+          CoordinateSequence *seq = _csf->create(coords);
+				  geom::LineString * line = _gf->createLineString(seq);
 				  parts.add(line);
 				}
 
@@ -302,8 +294,8 @@ RectangleIntersection::clip_linestring_parts(const geom::LineString * gi,
 
 					  if(through_box) coords->push_back(Coordinate(x,y));
 
-            CoordinateSequence *seq = cf->create(coords);
-            geom::LineString * line = gf->createLineString(seq);
+            CoordinateSequence *seq = _csf->create(coords);
+            geom::LineString * line = _gf->createLineString(seq);
 					  parts.add(line);
 					}
 				  // And continue main loop on the outside
@@ -327,8 +319,8 @@ RectangleIntersection::clip_linestring_parts(const geom::LineString * gi,
 						  //line->addSubLineString(&g, start_index, i-1);
               coords->insert(coords->end(), cs.begin()+start_index, cs.begin()+i);
 
-              CoordinateSequence *seq = cf->create(coords);
-              geom::LineString * line = gf->createLineString(seq);
+              CoordinateSequence *seq = _csf->create(coords);
+              geom::LineString * line = _gf->createLineString(seq);
 						  parts.add(line);
 						}
 					  start_index = i;
@@ -362,8 +354,8 @@ RectangleIntersection::clip_linestring_parts(const geom::LineString * gi,
 			  //line->addSubLineString(&g, start_index, i-1);
         coords->insert(coords->end(), cs.begin()+start_index, cs.begin()+i);
 
-        CoordinateSequence *seq = cf->create(coords);
-        geom::LineString * line = gf->createLineString(seq);
+        CoordinateSequence *seq = _csf->create(coords);
+        geom::LineString * line = _gf->createLineString(seq);
 			  parts.add(line);
 			}
 
@@ -386,11 +378,9 @@ RectangleIntersection::clip_polygon_to_linestrings(const geom::Polygon * g,
   if(g == NULL || g->isEmpty())
 	return;
 
-  const geom::GeometryFactory* gf = g->getFactory();
-
   // Clip the exterior first to see what's going on
 
-  RectangleIntersectionBuilder parts;
+  RectangleIntersectionBuilder parts(*_gf);
 
   // If everything was in, just clone the original
 
@@ -434,7 +424,7 @@ RectangleIntersection::clip_polygon_to_linestrings(const geom::Polygon * g,
       // clones
 		  LinearRing *hole = dynamic_cast<LinearRing*>(g->getInteriorRingN(i)->clone());
       // becomes exterior
-		  Polygon *poly = gf->createPolygon(hole, 0);
+		  Polygon *poly = _gf->createPolygon(hole, 0);
 		  parts.add(poly);
 		}
 	  else if(!parts.empty())
@@ -459,7 +449,7 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
 
   // Clip the exterior first to see what's going on
 
-  RectangleIntersectionBuilder parts;
+  RectangleIntersectionBuilder parts(*_gf);
 
   // If everything was in, just clone the original
 
@@ -469,13 +459,16 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
 	  return;
 	}
 
-  // If there were no intersections, the outer ring might be
-  // completely outside.
+  // If there were no intersections and clip_linestring_parts
+  // returned false, the outer ring should be completely outside.
 
   if( parts.empty() ) {
+#if 0
+    // TODO: only check a single point of the geometry ?
     using geos::operation::predicate::RectangleIntersects;
     std::auto_ptr<geom::Polygon> rectPoly ( rect.toGeometry(*g->getFactory()) );
     if ( !RectangleIntersects::intersects(*rectPoly, *g->getExteriorRing()) )
+#endif
 	    return;
   }
 
@@ -490,12 +483,13 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
 
   for(int i=0, n=g->getNumInteriorRing(); i<n; ++i)
 	{
-	  RectangleIntersectionBuilder holeparts;
+	  RectangleIntersectionBuilder holeparts(*_gf);
 	  if(clip_linestring_parts(g->getInteriorRingN(i), holeparts, rect))
 		{
-		  auto * poly = new geom::Polygon;
-		  auto * hole = g->getInteriorRingN(i);
-		  poly->addRing(const_cast<geom::LinearRing *>(hole));  // clones
+      // clones
+		  LinearRing *hole = dynamic_cast<LinearRing*>(g->getInteriorRingN(i)->clone());
+      // becomes exterior
+		  Polygon *poly = _gf->createPolygon(hole, 0);
 		  parts.add(poly);
 		}
 	  else
@@ -507,7 +501,9 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
 			}
 		  else
 			{
-			  if(inside(*g->getInteriorRingN(i), rect.xmin(), rect.ymin()))
+        using geos::algorithm::CGAlgorithms;
+			  if( CGAlgorithms::isPointInRing(Coordinate(rect.xmin(), rect.ymin()),
+            g->getInteriorRingN(i)->getCoordinatesRO()) )
 				{
 				  // Completely inside the hole
 				  return;
@@ -525,7 +521,8 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
  * \brief Clip  geometry
  */
 
-void clip_polygon(const geom::Polygon * g,
+void
+RectangleIntersection::clip_polygon(const geom::Polygon * g,
 				  RectangleIntersectionBuilder & parts,
 				  const Rectangle & rect,
 				  bool keep_polygons)
@@ -540,7 +537,8 @@ void clip_polygon(const geom::Polygon * g,
  * \brief Clip geometry
  */
 
-void clip_linestring(const geom::LineString * g,
+void
+RectangleIntersection::clip_linestring(const geom::LineString * g,
 					 RectangleIntersectionBuilder & parts,
 					 const Rectangle & rect)
 {
@@ -554,11 +552,8 @@ void clip_linestring(const geom::LineString * g,
   
 }
 
-/**
- * \brief Clip geometry
- */
-
-void clip_multipoint(const geom::MultiPoint * g,
+void
+RectangleIntersection::clip_multipoint(const geom::MultiPoint * g,
 					 RectangleIntersectionBuilder & parts,
 					 const Rectangle & rect)
 {
@@ -571,11 +566,8 @@ void clip_multipoint(const geom::MultiPoint * g,
 	}
 }
 
-/**
- * \brief Clip geometry
- */
-
-void clip_multilinestring(const geom::MultiLineString * g,
+void
+RectangleIntersection::clip_multilinestring(const geom::MultiLineString * g,
 						  RectangleIntersectionBuilder & parts,
 						  const Rectangle & rect)
 {
@@ -588,10 +580,6 @@ void clip_multilinestring(const geom::MultiLineString * g,
 					  parts, rect);
 	}
 }
-
-/**
- * \brief Clip geometry
- */
 
 void
 RectangleIntersection::clip_multipolygon(const geom::MultiPolygon * g,
@@ -608,10 +596,6 @@ RectangleIntersection::clip_multipolygon(const geom::MultiPolygon * g,
 				   parts, rect, keep_polygons);
 	}
 }
-
-/**
- * \brief Clip  geometry
- */
 
 void
 RectangleIntersection::clip_geometrycollection(
@@ -630,84 +614,73 @@ RectangleIntersection::clip_geometrycollection(
 	}
 }
 
-/**
- * \brief Clip geometry to output geometry
- */
-
 void
 RectangleIntersection::clip_geom(const geom::Geometry * g,
 			   RectangleIntersectionBuilder & parts,
 			   const Rectangle & rect,
 			   bool keep_polygons)
 {
-  wkbGeometryType id = g->getGeometryType();
-  
-  switch(id)
-	{
-	case wkbPoint:
-	  return clip_point(dynamic_cast<const geom::Point *>(g), parts, rect);
-	case wkbLineString:
-	  return clip_linestring(dynamic_cast<const geom::LineString *>(g), parts, rect);
-	case wkbPolygon:
-	  return clip_polygon(dynamic_cast<const geom::Polygon *>(g), parts, rect, keep_polygons);
-	case wkbMultiPoint:
-	  return clip_multipoint(dynamic_cast<const geom::MultiPoint *>(g), parts, rect);
-	case wkbMultiLineString:
-	  return clip_multilinestring(dynamic_cast<const geom::MultiLineString *>(g), parts, rect);
-	case wkbMultiPolygon:
-	  return clip_multipolygon(dynamic_cast<const geom::MultiPolygon *>(g), parts, rect, keep_polygons);
-	case wkbGeometryCollection:
-	  return clip_geometrycollection(dynamic_cast<const geom::GeometryCollection *>(g), parts, rect, keep_polygons);
-	case wkbLinearRing:
-	  throw std::runtime_error("Direct clipping of LinearRings is not supported");
-	case wkbNone:
-	  throw std::runtime_error("Encountered a 'none' geometry component when clipping polygons");
-	case wkbUnknown:
-	case wkbPoint25D:
-	case wkbLineString25D:
-	case wkbPolygon25D:
-	case wkbMultiLineString25D:
-	case wkbMultiPoint25D:
-	case wkbMultiPolygon25D:
-	case wkbGeometryCollection25D:
-	  throw std::runtime_error("Encountered an unknown geometry component when clipping polygons");
-	}
+	if ( const Point* p = dynamic_cast<const geom::Point *>(g) )
+	  return clip_point(p, parts, rect);
+	else if ( const MultiPoint* p = dynamic_cast<const geom::MultiPoint *>(g) )
+	  return clip_multipoint(p, parts, rect);
+	else if ( const LineString* p = dynamic_cast<const geom::LineString *>(g) )
+	  return clip_linestring(p, parts, rect);
+	else if ( const MultiLineString* p = dynamic_cast<const geom::MultiLineString *>(g) )
+	  return clip_multilinestring(p, parts, rect);
+	else if ( const Polygon* p = dynamic_cast<const geom::Polygon *>(g) )
+	  return clip_polygon(p, parts, rect, keep_polygons);
+	else if ( const MultiPolygon* p = dynamic_cast<const geom::MultiPolygon *>(g) )
+	  return clip_multipolygon(p, parts, rect, keep_polygons);
+	else if ( const GeometryCollection* p = dynamic_cast<const geom::GeometryCollection *>(g) )
+	  return clip_geometrycollection(p, parts, rect, keep_polygons);
+  else {
+    throw util::UnsupportedOperationException("Encountered an unknown geometry component when clipping polygons");
+  }
 }
 
-/**
- * \brief Clip a geometry so that polygons may not be preserved
- *
- * Any polygon which intersects the rectangle will be converted to
- * a polyline or a multipolyline - including the holes.
- *
- * \return Empty GeometryCollection if the result is empty
- */
-
+/* public static */
 geom::Geometry *
 RectangleIntersection::clipBoundary(const geom::Geometry & g, const Rectangle & rect)
 {
-  RectangleIntersectionBuilder parts;
+  RectangleIntersection ri(g,rect);
+  return ri.clipBoundary();
+}
+
+geom::Geometry *
+RectangleIntersection::clipBoundary()
+{
+  RectangleIntersectionBuilder parts(*_gf);
 
   bool keep_polygons = false;
-  clip_geom(&g, parts, rect, keep_polygons);
+  clip_geom(&_geom, parts, _rect, keep_polygons);
 
   return parts.build();
 }
 
-/**
- * \brief Clip a geometry so that polygons are preserved
- *
- * \return Empty GeometryCollection if the result is empty
- */
-
-geom::Geometry * clip(const geom::Geometry & g, const Rectangle & rect)
+/* public static */
+geom::Geometry *
+RectangleIntersection::clip(const geom::Geometry & g, const Rectangle & rect)
 {
-  RectangleIntersectionBuilder parts;
+  RectangleIntersection ri(g,rect);
+  return ri.clip();
+}
+
+geom::Geometry *
+RectangleIntersection::clip()
+{
+  RectangleIntersectionBuilder parts(*_gf);
 
   bool keep_polygons = true;
-  clip_geom(&g, parts, rect, keep_polygons);
+  clip_geom(&_geom, parts, _rect, keep_polygons);
 
   return parts.build();
+}
+
+RectangleIntersection::RectangleIntersection(const geom::Geometry& geom, const Rectangle& rect)
+  : _geom(geom), _rect(rect),
+    _gf(geom.getFactory()), _csf(_gf->getCoordinateSequenceFactory())
+{
 }
 
 } // namespace geos::operation::intersection

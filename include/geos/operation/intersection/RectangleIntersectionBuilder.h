@@ -23,10 +23,15 @@
 #endif
 
 #include <list>
+#include <vector>
+
 
 // Forward declarations
 namespace geos {
   namespace geom {
+	class Coordinate;
+	class Geometry;
+	class GeometryFactory;
 	class Polygon;
 	class LineString;
 	class Point;
@@ -65,11 +70,17 @@ public:
 
 private:
 
-  // Building the final results
+  /**
+   * \brief Build the result geometry from partial results and clean up
+   */
   geom::Geometry * build();
-  geom::Geometry * internalBuild() const;
 
-  // Utility methods needed for that, also outside this class
+  /**
+   * \brief Build polygons from parts left by clipping one
+   *
+   * 1. Build exterior ring(s) from lines
+   * 2. Attach polygons as holes to the exterior ring(s)
+   */
   void reconnectPolygons(const Rectangle & rect);
 
   /**
@@ -112,6 +123,31 @@ private:
   std::list<geom::Polygon *> polygons;
   std::list<geom::LineString *> lines;
   std::list<geom::Point *> points;
+
+  /**
+   * \brief Close a ring clockwise along rectangle edges
+   *
+   * Only the 4 corners and x1,y1 need to be considered. The possible
+   * cases are:
+   *
+   *    x1,y1
+   *    corner1 x1,y1
+   *    corner1 corner2 x1,y1
+   *    corner1 corner2 corner3 x1,y1
+   *    corner1 corner2 corner3 corner4 x1,y1
+   */
+  void close_boundary(
+          const Rectangle & rect,
+          std::vector<geom::Coordinate> * ring,
+          double x1, double y1,
+          double x2, double y2);
+
+  void close_ring(const Rectangle & rect, std::vector<geom::Coordinate> * ring);
+
+  RectangleIntersectionBuilder(const geom::GeometryFactory& f)
+    : _gf(f) {}
+
+  const geom::GeometryFactory &_gf;
 
 }; // class RectangleIntersectionBuilder
 
