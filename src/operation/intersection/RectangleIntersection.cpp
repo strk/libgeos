@@ -26,6 +26,7 @@
 #include <geos/geom/Geometry.h>
 #include <geos/geom/LineString.h>
 #include <geos/geom/LinearRing.h>
+#include <geos/geom/Location.h>
 #include <geos/util/UnsupportedOperationException.h>
 #include <list>
 #include <stdexcept>
@@ -386,7 +387,7 @@ RectangleIntersection::clip_polygon_to_linestrings(const geom::Polygon * g,
 
   if(clip_linestring_parts(g->getExteriorRing(), parts, rect))
 	{
-	  parts.add(dynamic_cast<geom::Polygon *>(g->clone()));
+	  toParts.add(dynamic_cast<geom::Polygon *>(g->clone()));
 	  return;
 	}
 
@@ -425,7 +426,7 @@ RectangleIntersection::clip_polygon_to_linestrings(const geom::Polygon * g,
 		  LinearRing *hole = dynamic_cast<LinearRing*>(g->getInteriorRingN(i)->clone());
       // becomes exterior
 		  Polygon *poly = _gf->createPolygon(hole, 0);
-		  parts.add(poly);
+		  toParts.add(poly);
 		}
 	  else if(!parts.empty())
 		{
@@ -455,21 +456,23 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
 
   if(clip_linestring_parts(g->getExteriorRing(), parts, rect))
 	{
-	  parts.add(dynamic_cast<geom::Polygon *>(g->clone()));
+	  toParts.add(dynamic_cast<geom::Polygon *>(g->clone()));
 	  return;
 	}
 
-  // If there were no intersections and clip_linestring_parts
-  // returned false, the outer ring should be completely outside.
+  // If there were no intersections, the outer ring might be
+  // completely outside.
 
-  if( parts.empty() ) {
-#if 0
-    // TODO: only check a single point of the geometry ?
-    using geos::operation::predicate::RectangleIntersects;
-    std::auto_ptr<geom::Polygon> rectPoly ( rect.toGeometry(*g->getFactory()) );
-    if ( !RectangleIntersects::intersects(*rectPoly, *g->getExteriorRing()) )
-#endif
-	    return;
+  using geos::algorithm::CGAlgorithms;
+  if( parts.empty() )
+  {
+    const Coordinate rectCorner(rect.xmin(), rect.ymin());
+    if ( CGAlgorithms::locatePointInRing(rectCorner,
+                          *g->getExteriorRing()->getCoordinatesRO())
+         != Location::INTERIOR )
+    {
+      return;
+    }
   }
 
   // Must do this to make sure all end points are on the edges

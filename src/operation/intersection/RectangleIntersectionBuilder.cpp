@@ -42,8 +42,38 @@ RectangleIntersectionBuilder::~RectangleIntersectionBuilder()
 void
 RectangleIntersectionBuilder::reconnect()
 {
-  // we won't do this
-  return;
+  // Nothing to reconnect if there aren't at least two lines
+  if(lines.size() < 2)
+       return;
+
+  geom::LineString * line1 = lines.front();
+  const geom::CoordinateSequence &cs1 = *line1->getCoordinatesRO();
+
+  geom::LineString * line2 = lines.back();
+  const geom::CoordinateSequence &cs2 = *line2->getCoordinatesRO();
+
+  const int n1 = cs1.size();
+  const int n2 = cs2.size();
+
+  // Safety check against bad input to prevent segfaults
+  if(n1==0 || n2==0)
+       return;
+
+  if (cs1[0] != cs2[n2-1]) return;
+
+  // Merge the two linestrings
+
+  CoordinateSequence *ncs = CoordinateSequence::removeRepeatedPoints(&cs2);
+  ncs->add(&cs1, false, true);
+
+  delete line1;
+  delete line2;
+
+  LineString * nline = _gf.createLineString(ncs);
+  lines.pop_front();
+  lines.pop_back();
+
+  lines.push_front(nline);
 }
 
 

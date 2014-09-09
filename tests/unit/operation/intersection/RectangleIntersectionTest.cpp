@@ -55,36 +55,36 @@ namespace tut
           return g2;
         }
 
-        bool isEqual(const Geom& a, const Geom& b)
+        bool isEqual(const Geom& a, const Geom& b, double tolerance=0)
         {
           using std::cout;
           using std::endl;
           GeomPtr a2 = normalize(a);
           GeomPtr b2 = normalize(b);
-          bool eq = a2->equalsExact(b2.get());
+          bool eq = a2->equalsExact(b2.get(), tolerance);
           if  ( ! eq ) {
             cout << "OBTAINED: " << wktwriter.write(b2.get()) << endl;
           }
           return eq;
         }
 
-        void doLineClipTest(const char* inputWKT, const std::string& expectedWKT, const Rectangle& rect)
+        void doLineClipTest(const char* inputWKT, const std::string& expectedWKT, const Rectangle& rect, double tolerance=0)
         {
           GeomPtr g = readWKT(inputWKT);
           ensure(g.get());
           GeomPtr obt = RectangleIntersection::clipBoundary(*g,rect);
           ensure(obt.get());
-          bool ok = isEqual(*readWKT(expectedWKT), *obt);
+          bool ok = isEqual(*readWKT(expectedWKT), *obt, tolerance);
           ensure(ok);
         }
 
-        void doClipTest(const char* inputWKT, const std::string& expectedWKT, const Rectangle& rect)
+        void doClipTest(const char* inputWKT, const std::string& expectedWKT, const Rectangle& rect, double tolerance=0)
         {
           GeomPtr g = readWKT(inputWKT);
           ensure(g.get());
           GeomPtr obt = RectangleIntersection::clip(*g,rect);
           ensure(obt.get());
-          bool ok = isEqual(*readWKT(expectedWKT), *obt);
+          bool ok = isEqual(*readWKT(expectedWKT), *obt, tolerance);
           ensure(ok);
         }
 
@@ -789,7 +789,7 @@ namespace tut
       doLineClipTest(
         "POLYGON ((6 6,4 4,-4 14,6 6))",
         "LINESTRING (1.0 10.0,6 6,4 4,0 9)",
-        Rectangle(0,0,10,10)
+        Rectangle(0,0,10,10), 1e-12
       );
     }
 
@@ -1188,7 +1188,6 @@ namespace tut
       );
     }
 
-#if 0
     template<> template<> void object::test<115>()
     {
       doClipTest(
@@ -1290,8 +1289,6 @@ namespace tut
       );
     }
 
-#endif
-#if 0
     template<> template<> void object::test<126>()
     {
       doClipTest(
@@ -1345,9 +1342,7 @@ namespace tut
         Rectangle(0,0,10,10)
       );
     }
-#endif
 
-#if 0 // toxic
     // Two points inside
     template<> template<> void object::test<132>()
     {
@@ -1357,9 +1352,7 @@ namespace tut
         Rectangle(0,0,10,10)
       );
     }
-#endif
 
-#if 0 // toxic
     template<> template<> void object::test<133>()
     {
       doClipTest(
@@ -1368,18 +1361,15 @@ namespace tut
         Rectangle(0,0,10,10)
       );
     }
-#endif
 
-#if 0 // toxic
     template<> template<> void object::test<134>()
     {
       doClipTest(
         "POLYGON ((6 6,4 4,-4 14,6 6))",
         "POLYGON ((0 9,0 10,1.0 10.0,6 6,4 4,0 9))",
-        Rectangle(0,0,10,10)
+        Rectangle(0,0,10,10), 1e-12
       );
     }
-#endif
 
     // Polygon with hole which surrounds the rectangle
     template<> template<> void object::test<135>()
@@ -1401,7 +1391,6 @@ namespace tut
       );
     }
 
-#if 0 // toxic
     // Polygon with hole cut at the right corner
     template<> template<> void object::test<137>()
     {
@@ -1411,7 +1400,6 @@ namespace tut
         Rectangle(0,0,10,10)
       );
     }
-#endif
 
     // Polygon going around a corner
     template<> template<> void object::test<138>()
@@ -1462,5 +1450,6 @@ namespace tut
         Rectangle(0,0,10,10)
       );
     }
+
 
 }
