@@ -59,9 +59,11 @@ namespace tut
         {
           using std::cout;
           using std::endl;
+          bool eq;
+          // TODO: use HausdorffDistance ?
           GeomPtr a2 = normalize(a);
           GeomPtr b2 = normalize(b);
-          bool eq = a2->equalsExact(b2.get(), tolerance);
+          eq = a2->equalsExact(b2.get(), tolerance);
           if  ( ! eq ) {
             cout << "OBTAINED: " << wktwriter.write(b2.get()) << endl;
           }
@@ -86,6 +88,14 @@ namespace tut
           ensure(obt.get());
           bool ok = isEqual(*readWKT(expectedWKT), *obt, tolerance);
           ensure(ok);
+// Compare with GEOSIntersection output
+#if 0
+          GeomPtr g2 ( rect.toPolygon(*g->getFactory()) );
+          obt.reset(g->intersection(g2.get()));
+          ensure(obt.get());
+          ok = isEqual(*readWKT(expectedWKT), *obt, tolerance);
+          ensure(ok);
+#endif
         }
 
     };
