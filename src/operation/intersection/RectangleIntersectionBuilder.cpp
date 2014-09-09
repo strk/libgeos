@@ -478,6 +478,8 @@ RectangleIntersectionBuilder::reconnectPolygons(const Rectangle & rect)
         }
 			}
 		}
+
+		delete poly;
 	}
 
   // Build the result polygons
