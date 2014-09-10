@@ -25,6 +25,7 @@
 #include <memory>
 #include <list>
 #include <vector>
+#include <iosfwd> // for output operator
 
 
 // Forward declarations
@@ -66,6 +67,8 @@ class GEOS_DLL RectangleIntersectionBuilder
   friend class RectangleIntersection;
 
 public:
+
+  friend std::ostream& operator<< (std::ostream& os, const RectangleIntersectionBuilder& b);
 
   ~RectangleIntersectionBuilder();
 
@@ -151,6 +154,8 @@ private:
   const geom::GeometryFactory &_gf;
 
 }; // class RectangleIntersectionBuilder
+
+std::ostream& operator<< (std::ostream& os, const RectangleIntersectionBuilder&);
 
 } // namespace geos::operation::intersection
 } // namespace geos::operation

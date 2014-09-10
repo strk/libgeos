@@ -496,6 +496,14 @@ RectangleIntersectionBuilder::reconnectPolygons(const Rectangle & rect)
   polygons = new_polygons;
 }
 
+std::ostream&
+operator<< (std::ostream& os, const RectangleIntersectionBuilder& b)
+{
+  os << b.points.size() << " points, " << b.lines.size() << " lines, "
+     << b.polygons.size() << " polygons";
+  return os;
+}
+
 } // namespace geos::operation::intersection
 } // namespace geos::operation
 } // namespace geos
