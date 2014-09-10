@@ -100,7 +100,7 @@ namespace tut
           ensure(ok);
 #endif
 // Compare with GEOSIntersection output
-#if 1
+#if 0
           GeomPtr g2 ( rect.toPolygon(*g->getFactory()) );
           obt.reset(g->intersection(g2.get()));
           ensure(obt.get());
@@ -856,7 +856,6 @@ namespace tut
       );
     }
 
-
     // inside
     template<> template<> void object::test<76>()
     {
@@ -1501,6 +1500,30 @@ namespace tut
         "POLYGON ((0 0,0 10,10 10,10 0,0 0))",
         Rectangle(0,0,10,10)
       );
+    }
+
+//-- NEW TESTS HERE
+
+    // from lower-right corner out
+    template<> template<> void object::test<200>()
+    {
+      Rectangle r(0,0,10,10);
+      const char *inp = "LINESTRING(10 0,20 0)";
+      const char *exp = "POINT(10 0)";
+
+      doLineClipTest(inp, exp, r);
+      doClipTest(inp, exp, r);
+    }
+
+    // from right-edge out
+    template<> template<> void object::test<201>()
+    {
+      Rectangle r(0,0,10,10);
+      const char *inp = "LINESTRING(10 5,20 0)";
+      const char *exp = "POINT(10 5)";
+
+      doLineClipTest(inp, exp, r);
+      doClipTest(inp, exp, r);
     }
 
 

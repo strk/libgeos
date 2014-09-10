@@ -314,7 +314,7 @@ std::cout << " Adding point!" << std::endl;
           {
 #if 1
 //std::cout << " Adding point!" << std::endl;
-            geom::Point *point = _gf->createPoint(Coordinate(x0, y0));
+            geom::Point *point = _gf->createPoint(cs[i-1]);
             parts.add(point);
 #endif
           }
