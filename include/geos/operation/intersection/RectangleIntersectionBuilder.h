@@ -75,12 +75,12 @@ public:
 private:
 
   /**
-   * \brief Build the result geometry from partial results and clean up
+   * Build the result geometry from partial results and clean up
    */
   std::auto_ptr<geom::Geometry> build();
 
   /**
-   * \brief Build polygons from parts left by clipping one
+   * Build polygons from parts left by clipping one
    *
    * 1. Build exterior ring(s) from lines
    * 2. Attach polygons as holes to the exterior ring(s)
@@ -128,6 +128,9 @@ private:
   std::list<geom::LineString *> lines;
   std::list<geom::Point *> points;
 
+  // Set to true of shell is known to fully cover the rectangle
+  bool shellCoversRect;
+
   /**
    * \brief Close a ring clockwise along rectangle edges
    *
@@ -149,7 +152,7 @@ private:
   void close_ring(const Rectangle & rect, std::vector<geom::Coordinate> * ring);
 
   RectangleIntersectionBuilder(const geom::GeometryFactory& f)
-    : _gf(f) {}
+    : shellCoversRect(false), _gf(f) {}
 
   const geom::GeometryFactory &_gf;
 

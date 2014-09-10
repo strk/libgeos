@@ -22,6 +22,7 @@
 #include <geos/geom/LineString.h>
 #include <geos/geom/LinearRing.h>
 #include <geos/algorithm/CGAlgorithms.h>
+#include <geos/util/IllegalArgumentException.h>
 
 namespace geos {
 namespace operation { // geos::operation
@@ -145,8 +146,9 @@ RectangleIntersectionBuilder::build()
 
   std::size_t n = polygons.size() + lines.size() + points.size();
 
-  if(n == 0)
-	return std::auto_ptr<Geometry>(_gf.createGeometryCollection());
+  if(n == 0) {
+	  return std::auto_ptr<Geometry>(_gf.createGeometryCollection());
+  }
 
   std::vector<Geometry *> *geoms = new std::vector<Geometry *>;
   geoms->reserve(n);
@@ -163,9 +165,10 @@ RectangleIntersectionBuilder::build()
       geoms->push_back(*i);
   points.clear();
 
-  return std::auto_ptr<Geometry>(
+  std::auto_ptr<Geometry> ret(
     (*geoms)[0]->getFactory()->buildGeometry(geoms)
   );
+  return ret;
 }
 
 /**
@@ -375,12 +378,14 @@ RectangleIntersectionBuilder::reconnectPolygons(const Rectangle & rect)
 
   ShellAndHolesList exterior;
 
+  // Lines not forming an area will remain as lines
+  std::list<geom::LineString *> dangling_lines;
+
   const CoordinateSequenceFactory &_csf = *_gf.getCoordinateSequenceFactory();
 
   // If there are no lines, the rectangle must have been
   // inside the exterior ring.
-
-  if(lines.empty())
+  if(lines.empty() && points.empty())
 	{
 	  geom::LinearRing * ring = rect.toLinearRing(_gf);
 	  exterior.push_back(make_pair(ring, new LinearRingVect()));
@@ -407,7 +412,6 @@ RectangleIntersectionBuilder::reconnectPolygons(const Rectangle & rect)
 		  double own_distance = distance(rect, *ring);
 
 		  // Find line to connect to
-      // TODO: should we use LineMerge op ?
 		  double best_distance = -1;
 		  std::list<LineString*>::iterator best_pos = lines.begin();
 		  for(std::list<LineString*>::iterator iter=lines.begin(); iter!=lines.end(); ++iter)
@@ -423,11 +427,28 @@ RectangleIntersectionBuilder::reconnectPolygons(const Rectangle & rect)
 		  // If own end point is closest, close the ring and continue
 		  if(best_distance < 0 || own_distance < best_distance)
 			{
-			  close_ring(rect,ring);
-			  normalize_ring(*ring);
-        geom::CoordinateSequence *shell_cs = _csf.create(ring);
-        geom::LinearRing *shell = _gf.createLinearRing(shell_cs);
-	      exterior.push_back(make_pair(shell, new LinearRingVect()));
+        geom::LinearRing *valid_shell = 0;
+        // TODO: check ring invalidity before moving on ...
+        std::vector<Coordinate> *newring = new std::vector<Coordinate>(*ring);
+			  close_ring(rect,newring);
+			  normalize_ring(*newring);
+        geom::CoordinateSequence *shell_cs = _csf.create(newring);
+        try {
+          valid_shell = _gf.createLinearRing(shell_cs);
+        } catch (const geos::util::IllegalArgumentException& e) {
+          // if it's invalid as a ring, it must be a line!
+        }
+        if ( valid_shell ) {
+	        exterior.push_back(make_pair(valid_shell, new LinearRingVect()));
+          delete ring;
+        } else {
+          if ( ! shellCoversRect ) {
+            // If shell covers rect we don't keep dangling
+            geom::CoordinateSequence *line_cs = _csf.create(ring);
+            geom::LineString *line = _gf.createLineString(line_cs);
+            dangling_lines.push_back(line);
+          }
+        }
 			  ring = NULL;
 			}
 		  else
@@ -449,6 +470,11 @@ RectangleIntersectionBuilder::reconnectPolygons(const Rectangle & rect)
 			}
 		}
 	}
+
+  if ( exterior.empty() && shellCoversRect ) {
+	  geom::LinearRing * ring = rect.toLinearRing(_gf);
+	  exterior.push_back(make_pair(ring, new LinearRingVect()));
+  }
 
   // Attach holes to polygons
 
@@ -492,7 +518,7 @@ RectangleIntersectionBuilder::reconnectPolygons(const Rectangle & rect)
 	  new_polygons.push_back(poly);
   }
 
-  clear();
+  lines = dangling_lines;
   polygons = new_polygons;
 }
 
@@ -500,7 +526,8 @@ std::ostream&
 operator<< (std::ostream& os, const RectangleIntersectionBuilder& b)
 {
   os << b.points.size() << " points, " << b.lines.size() << " lines, "
-     << b.polygons.size() << " polygons";
+     << b.polygons.size();
+  if ( b.shellCoversRect ) os << ", shell covers rect";
   return os;
 }
 

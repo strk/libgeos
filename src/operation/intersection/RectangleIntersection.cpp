@@ -30,6 +30,7 @@
 #include <geos/util/UnsupportedOperationException.h>
 #include <list>
 #include <stdexcept>
+#include <iostream>
 
 using geos::operation::intersection::Rectangle;
 using geos::operation::intersection::RectangleIntersectionBuilder;
@@ -130,7 +131,6 @@ RectangleIntersection::clip_linestring_parts(const geom::LineString * gi,
 
   std::vector<Coordinate> cs;
   gi->getCoordinatesRO()->toVector(cs);
-  //const geom::CoordinateSequence &cs = *(gi->getCoordinatesRO());
 
   // Keep a record of the point where a line segment entered
   // the rectangle. If the boolean is set, we must insert
@@ -155,6 +155,7 @@ RectangleIntersection::clip_linestring_parts(const geom::LineString * gi,
 
 	  if(pos == Rectangle::Outside)
 		{
+
 		  // Skip points as fast as possible until something has to be checked
 		  // in more detail.
 
@@ -208,18 +209,26 @@ RectangleIntersection::clip_linestring_parts(const geom::LineString * gi,
 			  Rectangle::Position prev_pos = rect.position(x0,y0);
 			  pos = rect.position(x,y);
 
-			  if( different(x0,y0,x,y) &&		// discard corners etc
-				  Rectangle::onEdge(prev_pos) &&		// discard if does not intersect rect
+			  if( Rectangle::onEdge(prev_pos) &&		// discard if does not intersect rect
 				  Rectangle::onEdge(pos) &&
 				  !Rectangle::onSameEdge(prev_pos,pos)	// discard if travels along edge
 				  )
 				{
-          std::vector<Coordinate> *coords = new std::vector<Coordinate>(2);
-				  (*coords)[0] = Coordinate(x0,y0);
-				  (*coords)[1] = Coordinate(x,y);
-          CoordinateSequence *seq = _csf->create(coords);
-				  geom::LineString * line = _gf->createLineString(seq);
-				  parts.add(line);
+			    if( different(x0,y0,x,y) ) {
+            std::vector<Coordinate> *coords = new std::vector<Coordinate>(2);
+            (*coords)[0] = Coordinate(x0,y0);
+            (*coords)[1] = Coordinate(x,y);
+            CoordinateSequence *seq = _csf->create(coords);
+            geom::LineString * line = _gf->createLineString(seq);
+            parts.add(line);
+          }
+#if 0
+          else {
+std::cout << " Adding point!" << std::endl;
+            geom::Point *point = _gf->createPoint(Coordinate(x0, y0));
+            parts.add(point);
+          }
+#endif
 				}
 
 			  // Continue main loop outside the rect
@@ -247,6 +256,7 @@ RectangleIntersection::clip_linestring_parts(const geom::LineString * gi,
 
 	  else
 		{
+
 		  // The point is now stricly inside or on the edge.
 		  // Keep iterating until the end or the point goes
 		  // outside. We may have to output partial linestrings
@@ -299,6 +309,15 @@ RectangleIntersection::clip_linestring_parts(const geom::LineString * gi,
             geom::LineString * line = _gf->createLineString(seq);
 					  parts.add(line);
 					}
+				  // Output a Point if clipped segment was a point 
+          else if ( x == cs[i-1].x && y == cs[i-1].y )
+          {
+#if 1
+//std::cout << " Adding point!" << std::endl;
+            geom::Point *point = _gf->createPoint(Coordinate(x0, y0));
+            parts.add(point);
+#endif
+          }
 				  // And continue main loop on the outside
 				}
 			  else
@@ -324,7 +343,10 @@ RectangleIntersection::clip_linestring_parts(const geom::LineString * gi,
               geom::LineString * line = _gf->createLineString(seq);
 						  parts.add(line);
 						}
+#if 0
 					  start_index = i;
+std::cout << " start_index updated to " << start_index << std::endl;
+#endif
 					}
 				  else
 					{
@@ -340,6 +362,11 @@ RectangleIntersection::clip_linestring_parts(const geom::LineString * gi,
 			return true;
 
 		  // Flush the last line segment if data ended and there is something to flush
+
+//Gone outside, start_index:2 add_start:0 through_box:0
+//By the end of the loop start_index:2 n:4 i:3 go_outside:1 add_start:0
+//Position of point 3 is Outside
+
 
 		  if(!go_outside &&						// meaning data ended
 			 (start_index < i-1 || add_start))	// meaning something has to be generated
@@ -471,7 +498,12 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
                           *g->getExteriorRing()->getCoordinatesRO())
          != Location::INTERIOR )
     {
-      return;
+      return; // return completely outside ?
+    }
+    else
+    {
+      // fully wraps the rectangle
+	    toParts.shellCoversRect = parts.shellCoversRect = true; 
     }
   }
 
@@ -482,7 +514,6 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
   // Handle the holes now:
   // - Clipped ones become part of the exterior
   // - Intact ones become holes in new polygons formed by exterior parts
-
 
   for(int i=0, n=g->getNumInteriorRing(); i<n; ++i)
 	{
@@ -516,6 +547,7 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
 	}
 
   parts.reconnectPolygons(rect);
+
   parts.release(toParts);
 
 }

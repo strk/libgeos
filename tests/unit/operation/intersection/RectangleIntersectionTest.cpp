@@ -60,12 +60,19 @@ namespace tut
           using std::cout;
           using std::endl;
           bool eq;
-          // TODO: use HausdorffDistance ?
-          GeomPtr a2 = normalize(a);
-          GeomPtr b2 = normalize(b);
-          eq = a2->equalsExact(b2.get(), tolerance);
-          if  ( ! eq ) {
-            cout << "OBTAINED: " << wktwriter.write(b2.get()) << endl;
+          if ( ! tolerance ) {
+            eq = a.equals(&b);
+            if  ( ! eq ) {
+              cout << "OBTAINED: " << wktwriter.write(&b) << endl;
+            }
+          } else {
+            // TODO: use HausdorffDistance ?
+            GeomPtr a2 = normalize(a);
+            GeomPtr b2 = normalize(b);
+            eq = a2->equalsExact(b2.get(), tolerance);
+            if  ( ! eq ) {
+              cout << "OBTAINED: " << wktwriter.write(b2.get()) << endl;
+            }
           }
           return eq;
         }
@@ -84,12 +91,16 @@ namespace tut
         {
           GeomPtr g = readWKT(inputWKT);
           ensure(g.get());
-          GeomPtr obt = RectangleIntersection::clip(*g,rect);
+          GeomPtr obt;
+          bool ok;
+#if 1
+          obt = RectangleIntersection::clip(*g,rect);
           ensure(obt.get());
-          bool ok = isEqual(*readWKT(expectedWKT), *obt, tolerance);
+          ok = isEqual(*readWKT(expectedWKT), *obt, tolerance);
           ensure(ok);
+#endif
 // Compare with GEOSIntersection output
-#if 0
+#if 1
           GeomPtr g2 ( rect.toPolygon(*g->getFactory()) );
           obt.reset(g->intersection(g2.get()));
           ensure(obt.get());
@@ -160,7 +171,8 @@ namespace tut
     {
       doLineClipTest(
         "LINESTRING (0 3,0 5,0 7)",
-        "GEOMETRYCOLLECTION EMPTY",
+        //"GEOMETRYCOLLECTION EMPTY",
+        "LINESTRING (0 3,0 5,0 7)",
         Rectangle(0,0,10,10)
       );
     }
@@ -170,7 +182,8 @@ namespace tut
     {
       doLineClipTest(
         "LINESTRING (0 3,0 5,-1 7)",
-        "GEOMETRYCOLLECTION EMPTY",
+        //"GEOMETRYCOLLECTION EMPTY",
+        "LINESTRING (0 3,0 5)",
         Rectangle(0,0,10,10)
       );
     }
@@ -180,7 +193,8 @@ namespace tut
     {
       doLineClipTest(
         "LINESTRING (0 3,0 5,2 7)",
-        "LINESTRING (0 5,2 7)",
+        //"LINESTRING (0 5,2 7)",
+        "LINESTRING (0 3,0 5,2 7)",
         Rectangle(0,0,10,10)
       );
     }
@@ -200,7 +214,8 @@ namespace tut
     {
       doLineClipTest(
         "LINESTRING (3 3,0 3,0 5,2 7)",
-        "MULTILINESTRING ((3 3,0 3),(0 5,2 7))",
+        //"MULTILINESTRING ((3 3,0 3),(0 5,2 7))",
+        "LINESTRING (3 3,0 3,0 5,2 7)",
         Rectangle(0,0,10,10)
       );
     }
@@ -290,7 +305,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((0 0,10 0,5 10,0 0))",
-        "LINESTRING (10 0,5 10,0 0)",
+        //"LINESTRING (10 0,5 10,0 0)",
+        "POLYGON ((0 0,10 0,5 10,0 0))",
         Rectangle(0,0,10,10)
       );
     }
@@ -300,7 +316,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((5 10,0 0,10 0,5 10))",
-        "LINESTRING (10 0,5 10,0 0)",
+        //"LINESTRING (10 0,5 10,0 0)",
+        "POLYGON ((5 10,0 0,10 0,5 10))",
         Rectangle(0,0,10,10)
       );
     }
@@ -340,7 +357,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((-10 5,10 10,10 5,-10 5))",
-        "MULTILINESTRING ((0.0 7.5,10 10),(10 5,0 5))",
+      //"MULTILINESTRING ((0.0 7.5,10 10),(10 5,0 5))",
+        "MULTILINESTRING ((0.0 7.5,10 10),(10 10,10 5,0 5))",
         Rectangle(0,0,10,10)
       );
     }
@@ -370,7 +388,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((0 0,5 5,10 0,0 0))",
-        "LINESTRING (0 0,5 5,10 0)",
+        //"LINESTRING (0 0,5 5,10 0)",
+        "POLYGON ((0 0,5 5,10 0,0 0))",
         Rectangle(0,0,10,10)
       );
     }
@@ -390,7 +409,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((0 0,10 10,10 0,0 0))",
-        "LINESTRING (0 0,10 10)",
+        //"LINESTRING (0 0,10 10)",
+        "POLYGON ((0 0,10 10,10 0,0 0))",
         Rectangle(0,0,10,10)
       );
     }
@@ -457,11 +477,11 @@ namespace tut
 
     // Drew all combinations I could imagine on paper, and added the following.
     // All triangles fully inside
-    template<> template<> void object::test<36>()
-    {
+    template<> template<> void object::test<36>() {
       doLineClipTest(
         "POLYGON ((0 0,0 10,10 10,0 0))",
-        "LINESTRING (10 10,0 0)",
+        //"LINESTRING (10 10,0 0)",
+        "POLYGON ((0 0,0 10,10 10,0 0))",
         Rectangle(0,0,10,10)
       );
     }
@@ -470,7 +490,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((0 5,0 10,10 10,0 5))",
-        "LINESTRING (10 10,0 5)",
+        //"LINESTRING (10 10,0 5)",
+        "POLYGON ((0 5,0 10,10 10,0 5))",
         Rectangle(0,0,10,10)
       );
     }
@@ -479,7 +500,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((0 10,10 10,5 0,0 10))",
-        "LINESTRING (10 10,5 0,0 10)",
+        //"LINESTRING (10 10,5 0,0 10)",
+        "POLYGON ((0 10,10 10,5 0,0 10))",
         Rectangle(0,0,10,10)
       );
     }
@@ -488,7 +510,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((0 10,10 10,5 5,0 10))",
-        "LINESTRING (10 10,5 5,0 10)",
+        //"LINESTRING (10 10,5 5,0 10)",
+        "POLYGON ((0 10,10 10,5 5,0 10))",
         Rectangle(0,0,10,10)
       );
     }
@@ -497,7 +520,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((0 10,5 10,0 5,0 10))",
-        "LINESTRING (5 10,0 5)",
+        //"LINESTRING (5 10,0 5)",
+        "POLYGON ((0 10,5 10,0 5,0 10))",
         Rectangle(0,0,10,10)
       );
     }
@@ -506,7 +530,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((0 10,10 5,0 5,0 10))",
-        "LINESTRING (0 10,10 5,0 5)",
+        //"LINESTRING (0 10,10 5,0 5)",
+        "POLYGON ((0 10,10 5,0 5,0 10))",
         Rectangle(0,0,10,10)
       );
     }
@@ -515,7 +540,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((0 10,10 0,0 5,0 10))",
-        "LINESTRING (0 10,10 0,0 5)",
+        //"LINESTRING (0 10,10 0,0 5)",
+        "POLYGON ((0 10,10 0,0 5,0 10))",
         Rectangle(0,0,10,10)
       );
     }
@@ -524,7 +550,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((0 10,5 0,0 5,0 10))",
-        "LINESTRING (0 10,5 0,0 5)",
+        //"LINESTRING (0 10,5 0,0 5)",
+        "POLYGON ((0 10,5 0,0 5,0 10))",
         Rectangle(0,0,10,10)
       );
     }
@@ -533,7 +560,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((0 10,5 5,0 5,0 10))",
-        "LINESTRING (0 10,5 5,0 5)",
+        //"LINESTRING (0 10,5 5,0 5)",
+        "POLYGON ((0 10,5 5,0 5,0 10))",
         Rectangle(0,0,10,10)
       );
     }
@@ -615,7 +643,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((-5 10,0 15,0 10,-5 10))",
-        "GEOMETRYCOLLECTION EMPTY",
+        //"GEOMETRYCOLLECTION EMPTY",
+        "POINT(0 10)",
         Rectangle(0,0,10,10)
       );
     }
@@ -624,7 +653,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((-5 10,0 5,-5 0,-5 10))",
-        "GEOMETRYCOLLECTION EMPTY",
+        //"GEOMETRYCOLLECTION EMPTY",
+        "POINT(0 5)",
         Rectangle(0,0,10,10)
       );
     }
@@ -634,7 +664,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((-5 5,0 10,0 0,-5 5))",
-        "GEOMETRYCOLLECTION EMPTY",
+        //"GEOMETRYCOLLECTION EMPTY",
+        "LINESTRING (0 10, 0 0)",
         Rectangle(0,0,10,10)
       );
     }
@@ -643,7 +674,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((-5 5,0 10,0 5,-5 5))",
-        "GEOMETRYCOLLECTION EMPTY",
+        //"GEOMETRYCOLLECTION EMPTY",
+        "LINESTRING (0 10, 0 5)",
         Rectangle(0,0,10,10)
       );
     }
@@ -652,7 +684,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((-5 5,0 7,0 3,-5 5))",
-        "GEOMETRYCOLLECTION EMPTY",
+        //"GEOMETRYCOLLECTION EMPTY",
+        "LINESTRING (0 7,0 3)",
         Rectangle(0,0,10,10)
       );
     }
@@ -879,7 +912,8 @@ namespace tut
     {
       doClipTest(
         "LINESTRING (0 3,0 5,0 7)",
-        "GEOMETRYCOLLECTION EMPTY",
+        //"GEOMETRYCOLLECTION EMPTY",
+        "LINESTRING (0 3,0 5,0 7)",
         Rectangle(0,0,10,10)
       );
     }
@@ -889,7 +923,8 @@ namespace tut
     {
       doClipTest(
         "LINESTRING (0 3,0 5,-1 7)",
-        "GEOMETRYCOLLECTION EMPTY",
+        //"GEOMETRYCOLLECTION EMPTY",
+        "LINESTRING (0 3,0 5)",
         Rectangle(0,0,10,10)
       );
     }
@@ -899,7 +934,8 @@ namespace tut
     {
       doClipTest(
         "LINESTRING (0 3,0 5,2 7)",
-        "LINESTRING (0 5,2 7)",
+        //"LINESTRING (0 5,2 7)",
+        "LINESTRING (0 3,0 5,2 7)",
         Rectangle(0,0,10,10)
       );
     }
@@ -919,7 +955,8 @@ namespace tut
     {
       doClipTest(
         "LINESTRING (3 3,0 3,0 5,2 7)",
-        "MULTILINESTRING ((3 3,0 3),(0 5,2 7))",
+        //"MULTILINESTRING ((3 3,0 3),(0 5,2 7))",
+        "LINESTRING (3 3,0 3,0 5,2 7)",
         Rectangle(0,0,10,10)
       );
     }
@@ -1193,7 +1230,8 @@ namespace tut
     {
       doClipTest(
         "POLYGON ((-5 10,0 15,0 10,-5 10))",
-        "GEOMETRYCOLLECTION EMPTY",
+        //"GEOMETRYCOLLECTION EMPTY",
+        "POINT(0 10)",
         Rectangle(0,0,10,10)
       );
     }
@@ -1202,7 +1240,8 @@ namespace tut
     {
       doClipTest(
         "POLYGON ((-5 10,0 5,-5 0,-5 10))",
-        "GEOMETRYCOLLECTION EMPTY",
+        //"GEOMETRYCOLLECTION EMPTY",
+        "POINT(0 5)",
         Rectangle(0,0,10,10)
       );
     }
@@ -1212,7 +1251,8 @@ namespace tut
     {
       doClipTest(
         "POLYGON ((-5 5,0 10,0 0,-5 5))",
-        "GEOMETRYCOLLECTION EMPTY",
+        //"GEOMETRYCOLLECTION EMPTY",
+        "LINESTRING (0 10, 0 0)",
         Rectangle(0,0,10,10)
       );
     }
@@ -1221,7 +1261,8 @@ namespace tut
     {
       doClipTest(
         "POLYGON ((-5 5,0 10,0 5,-5 5))",
-        "GEOMETRYCOLLECTION EMPTY",
+        //"GEOMETRYCOLLECTION EMPTY",
+        "LINESTRING(0 5, 0 10)",
         Rectangle(0,0,10,10)
       );
     }
@@ -1230,7 +1271,8 @@ namespace tut
     {
       doClipTest(
         "POLYGON ((-5 5,0 7,0 3,-5 5))",
-        "GEOMETRYCOLLECTION EMPTY",
+        //"GEOMETRYCOLLECTION EMPTY",
+        "LINESTRING (0 7,0 3)",
         Rectangle(0,0,10,10)
       );
     }
