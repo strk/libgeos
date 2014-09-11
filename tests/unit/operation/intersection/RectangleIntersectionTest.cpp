@@ -6,6 +6,8 @@
 // geos
 #include <geos/operation/intersection/Rectangle.h>
 #include <geos/operation/intersection/RectangleIntersection.h>
+#include <geos/operation/valid/IsValidOp.h>
+#include <geos/operation/valid/TopologyValidationError.h>
 #include <geos/geom/GeometryFactory.h>
 #include <geos/geom/Geometry.h>
 #include <geos/geom/Polygon.h>
@@ -93,16 +95,29 @@ namespace tut
           ensure(g.get());
           GeomPtr obt;
           bool ok;
+          using std::cout;
+          using std::endl;
+          using geos::operation::valid::IsValidOp;
+          using geos::operation::valid::TopologyValidationError;
 #if 1
           obt = RectangleIntersection::clip(*g,rect);
           ensure(obt.get());
+          IsValidOp isValidOp(obt.get());
+	        bool valid = isValidOp.isValid();
+          if ( ! valid ) {
+            TopologyValidationError* err = isValidOp.getValidationError();
+            cout << "Invalid result: " << err->toString() << endl
+                 << wktwriter.write(obt.get()) << endl;
+          } 
+          ensure(valid);
           ok = isEqual(*readWKT(expectedWKT), *obt, tolerance);
           ensure(ok);
 #endif
 // Compare with GEOSIntersection output
-#if 0
+#if 1
           GeomPtr g2 ( rect.toPolygon(*g->getFactory()) );
           obt.reset(g->intersection(g2.get()));
+          //ensure(obt->isValid());
           ensure(obt.get());
           ok = isEqual(*readWKT(expectedWKT), *obt, tolerance);
           ensure(ok);
@@ -1525,6 +1540,28 @@ namespace tut
       doLineClipTest(inp, exp, r);
       doClipTest(inp, exp, r);
     }
+
+    // Shell overlaps rectangle, hole inside touches edge
+    // Found in tests/general/TestFunctionAA.xml: case13: test3
+#if 0 // fails !
+    template<> template<> void object::test<202>()
+    {
+//  Geometry A: POLYGON ((60 160, 140 160, 140 60, 60 60, 60 160))
+//  Geometry B: POLYGON ((160 160, 100 160, 100 100, 160 100, 160 160), (140 140, 120 140, 120 120, 140 120, 140 140))
+
+      Rectangle r(0,0,10,10);
+      const char *inp =
+        "POLYGON((5 2,5 8,15 8,15 2,5 2),(8 4, 8 6, 10 6, 10 4, 8 4))";
+      char *exp = "GEOMETRYCOLLECTION (LINESTRING (10 4, 10 6), POLYGON ((10 4, 10 2, 5 2, 5 8, 10 8, 10 6, 8 6, 8 4, 10 4)))";
+      doClipTest(inp, exp, r);
+
+#if 0
+      exp = "LINESTRING(5 2,5 8,10 8,10 6,8 6,8 4,10 4,10 2,5 2)";
+      //GEOMETRYCOLLECTION (POLYGON ((8 4, 8 6, 10 6, 10 4, 8 4)), LINESTRING (10 2, 5 2, 5 8, 10 8))
+      doLineClipTest(inp, exp, r);
+#endif
+    }
+#endif
 
 
 }
