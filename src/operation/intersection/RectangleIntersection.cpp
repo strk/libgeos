@@ -32,9 +32,14 @@
 #include <stdexcept>
 #include <iostream>
 
+#ifndef GEOS_DEBUG
+# define GEOS_DEBUG 0
+#endif
+
 using geos::operation::intersection::Rectangle;
 using geos::operation::intersection::RectangleIntersectionBuilder;
 using namespace geos::geom;
+
 namespace geos {
 namespace operation { // geos::operation
 namespace intersection { // geos::operation::intersection
@@ -155,6 +160,9 @@ RectangleIntersection::clip_linestring_parts(const geom::LineString * gi,
 
 	  if(pos == Rectangle::Outside)
 		{
+#if GEOS_DEBUG
+      std::cout << "P " << i << ": " << cs[i] << " is outside" << std::endl;
+#endif
 
 		  // Skip points as fast as possible until something has to be checked
 		  // in more detail.
@@ -178,7 +186,7 @@ RectangleIntersection::clip_linestring_parts(const geom::LineString * gi,
 			  ++i;
 
 		  if(i >= n)
-			return false;
+			return false; // fully outside
 
 		  // Establish new position
 		  x = cs[i].x;
@@ -192,12 +200,18 @@ RectangleIntersection::clip_linestring_parts(const geom::LineString * gi,
 
 		  if(pos == Rectangle::Inside)
 			{
+#if GEOS_DEBUG
+      std::cout << "P " << i << ": " << cs[i] << " is inside (out to in)" << std::endl;
+#endif
 			  add_start = true;	// x0,y0 must have clipped the rectangle
 			  // Main loop will enter the Inside/Edge section
 
 			}
 		  else if(pos == Rectangle::Outside)
 			{
+#if GEOS_DEBUG
+      std::cout << "P " << i << ": " << cs[i] << " is outside (out to out)" << std::endl;
+#endif
 			  // From Outside to Outside. We need to check whether
 			  // we created a line segment inside the box. In any
 			  // case, we will continue the main loop after this
@@ -236,6 +250,9 @@ std::cout << " Adding point!" << std::endl;
 			}
 		  else
 			{
+#if GEOS_DEBUG
+      std::cout << "P " << i << ": " << cs[i] << " is edge (out to edge)" << std::endl;
+#endif
 			  // From outside to edge. If the edge we hit first when
 			  // following the line is not the edge we end at, then
 			  // clearly we must go through the rectangle and hence
@@ -257,6 +274,10 @@ std::cout << " Adding point!" << std::endl;
 	  else
 		{
 
+#if GEOS_DEBUG
+      std::cout << "P " << i << ": " << cs[i] << " is inside or on edge" << std::endl;
+#endif
+
 		  // The point is now stricly inside or on the edge.
 		  // Keep iterating until the end or the point goes
 		  // outside. We may have to output partial linestrings
@@ -275,10 +296,16 @@ std::cout << " Adding point!" << std::endl;
 
 			  if(pos == Rectangle::Inside)
 				{
+#if GEOS_DEBUG
+      std::cout << "P " << i << ": " << cs[i] << " is inside" << std::endl;
+#endif
 				  // Just keep going
 				}
 			  else if(pos == Rectangle::Outside)
 				{
+#if GEOS_DEBUG
+      std::cout << "P " << i << ": " << cs[i] << " is outside" << std::endl;
+#endif
 				  go_outside = true;
 
 				  // Clip the outside point to edges
@@ -322,6 +349,9 @@ std::cout << " Adding point!" << std::endl;
 				}
 			  else
 				{
+#if GEOS_DEBUG
+      std::cout << "P " << i << ": " << cs[i] << " is on edge" << std::endl;
+#endif
 				  // on same edge?
 				  if(Rectangle::onSameEdge(prev_pos,pos))
 					{
@@ -329,14 +359,11 @@ std::cout << " Adding point!" << std::endl;
 					  if(start_index < i-1 || add_start)
 						{
               std::vector<Coordinate> *coords = new std::vector<Coordinate>();
-						  //geom::LineString * line = new geom::LineString();
 						  if(add_start)
 							{
-							  //line->addPoint(x0,y0);
 						    coords->push_back(Coordinate(x0, y0));
 							  add_start = false;
 							}
-						  //line->addSubLineString(&g, start_index, i-1);
               coords->insert(coords->end(), cs.begin()+start_index, cs.begin()+i);
 
               CoordinateSequence *seq = _csf->create(coords);
@@ -357,7 +384,9 @@ std::cout << " start_index updated to " << start_index << std::endl;
 				}
 			}
 
-		  // Was everything in? If so, generate no output but return true in this case only
+		  // Was everything in?
+		  // If so, generate no output but return true in this case only
+		  // TODO: review this for holes laying on a boundary !
 		  if(start_index == 0 && i >= n)
 			return true;
 
@@ -449,6 +478,9 @@ RectangleIntersection::clip_polygon_to_linestrings(const geom::Polygon * g,
 	{
 	  if(clip_linestring_parts(g->getInteriorRingN(i), parts, rect))
 		{
+#if GEOS_DEBUG
+      std::cout << "Hole " << i << " completely wraps the rect" << std::endl;
+#endif
       // clones
 		  LinearRing *hole = dynamic_cast<LinearRing*>(g->getInteriorRingN(i)->clone());
       // becomes exterior
@@ -520,6 +552,9 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
 	  RectangleIntersectionBuilder holeparts(*_gf);
 	  if(clip_linestring_parts(g->getInteriorRingN(i), holeparts, rect))
 		{
+#if GEOS_DEBUG
+      std::cout << "Hole " << i << " full inside " << std::endl;
+#endif
       // clones
 		  LinearRing *hole = dynamic_cast<LinearRing*>(g->getInteriorRingN(i)->clone());
       // becomes exterior
@@ -539,12 +574,19 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
 			  if( CGAlgorithms::isPointInRing(Coordinate(rect.xmin(), rect.ymin()),
             g->getInteriorRingN(i)->getCoordinatesRO()) )
 				{
+#if GEOS_DEBUG
+      std::cout << "Hole " << i << " completely wraps the rect" << std::endl;
+#endif
 				  // Completely inside the hole
 				  return;
 				}
 			}
 		}
 	}
+
+#if GEOS_DEBUG
+  std::cout << "by the end of clip_polygon_to_polygons, parts are " << parts << std::endl;
+#endif
 
   parts.reconnectPolygons(rect);
 
