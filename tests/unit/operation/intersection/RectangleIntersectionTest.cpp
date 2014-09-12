@@ -321,7 +321,8 @@ namespace tut
       doLineClipTest(
         "POLYGON ((0 0,10 0,5 10,0 0))",
         //"LINESTRING (10 0,5 10,0 0)",
-        "POLYGON ((0 0,10 0,5 10,0 0))",
+        //"POLYGON ((0 0,10 0,5 10,0 0))",
+        "MULTILINESTRING ((10 0, 5 10), (5 10, 0 0), (0 0, 10 0))",
         Rectangle(0,0,10,10)
       );
     }
@@ -332,7 +333,8 @@ namespace tut
       doLineClipTest(
         "POLYGON ((5 10,0 0,10 0,5 10))",
         //"LINESTRING (10 0,5 10,0 0)",
-        "POLYGON ((5 10,0 0,10 0,5 10))",
+        //"POLYGON ((5 10,0 0,10 0,5 10))",
+        "MULTILINESTRING ((10 0, 5 10, 0 0), (0 0, 10 0))",
         Rectangle(0,0,10,10)
       );
     }
@@ -393,7 +395,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((0 5,5 10,10 5,0 5))",
-        "POLYGON ((0 5,5 10,10 5,0 5))",
+        //"POLYGON ((0 5,5 10,10 5,0 5))",
+        "MULTILINESTRING ((10 5, 0 5, 5 10), (5 10, 10 5))",
         Rectangle(0,0,10,10)
       );
     }
@@ -404,7 +407,8 @@ namespace tut
       doLineClipTest(
         "POLYGON ((0 0,5 5,10 0,0 0))",
         //"LINESTRING (0 0,5 5,10 0)",
-        "POLYGON ((0 0,5 5,10 0,0 0))",
+        //"POLYGON ((0 0,5 5,10 0,0 0))",
+        "LINESTRING (10 0, 0 0, 5 5, 10 0)",
         Rectangle(0,0,10,10)
       );
     }
@@ -425,7 +429,8 @@ namespace tut
       doLineClipTest(
         "POLYGON ((0 0,10 10,10 0,0 0))",
         //"LINESTRING (0 0,10 10)",
-        "POLYGON ((0 0,10 10,10 0,0 0))",
+        //"POLYGON ((0 0,10 10,10 0,0 0))",
+        "LINESTRING (10 10, 10 0, 0 0, 10 10)",
         Rectangle(0,0,10,10)
       );
     }
@@ -496,7 +501,8 @@ namespace tut
       doLineClipTest(
         "POLYGON ((0 0,0 10,10 10,0 0))",
         //"LINESTRING (10 10,0 0)",
-        "POLYGON ((0 0,0 10,10 10,0 0))",
+        //"POLYGON ((0 0,0 10,10 10,0 0))",
+        "MULTILINESTRING ((10 10, 0 0), (0 0, 0 10, 10 10))",
         Rectangle(0,0,10,10)
       );
     }
@@ -506,7 +512,8 @@ namespace tut
       doLineClipTest(
         "POLYGON ((0 5,0 10,10 10,0 5))",
         //"LINESTRING (10 10,0 5)",
-        "POLYGON ((0 5,0 10,10 10,0 5))",
+        //"POLYGON ((0 5,0 10,10 10,0 5))",
+        "MULTILINESTRING ((10 10, 0 5), (0 5, 0 10, 10 10))",
         Rectangle(0,0,10,10)
       );
     }
@@ -516,7 +523,8 @@ namespace tut
       doLineClipTest(
         "POLYGON ((0 10,10 10,5 0,0 10))",
         //"LINESTRING (10 10,5 0,0 10)",
-        "POLYGON ((0 10,10 10,5 0,0 10))",
+        //"POLYGON ((0 10,10 10,5 0,0 10))",
+        "MULTILINESTRING ((10 10, 5 0), (5 0, 0 10), (0 10, 10 10))",
         Rectangle(0,0,10,10)
       );
     }
@@ -526,7 +534,8 @@ namespace tut
       doLineClipTest(
         "POLYGON ((0 10,10 10,5 5,0 10))",
         //"LINESTRING (10 10,5 5,0 10)",
-        "POLYGON ((0 10,10 10,5 5,0 10))",
+        //"POLYGON ((0 10,10 10,5 5,0 10))",
+        "MULTILINESTRING ((10 10, 5 5, 0 10), (0 10, 10 10))",
         Rectangle(0,0,10,10)
       );
     }
@@ -536,7 +545,8 @@ namespace tut
       doLineClipTest(
         "POLYGON ((0 10,5 10,0 5,0 10))",
         //"LINESTRING (5 10,0 5)",
-        "POLYGON ((0 10,5 10,0 5,0 10))",
+        //"POLYGON ((0 10,5 10,0 5,0 10))",
+        "MULTILINESTRING ((5 10, 0 5), (0 5, 0 10), (0 10, 5 10))",
         Rectangle(0,0,10,10)
       );
     }
@@ -546,7 +556,8 @@ namespace tut
       doLineClipTest(
         "POLYGON ((0 10,10 5,0 5,0 10))",
         //"LINESTRING (0 10,10 5,0 5)",
-        "POLYGON ((0 10,10 5,0 5,0 10))",
+        //"POLYGON ((0 10,10 5,0 5,0 10))",
+        "MULTILINESTRING ((0 5, 0 10, 10 5), (10 5, 0 5))",
         Rectangle(0,0,10,10)
       );
     }
@@ -556,7 +567,8 @@ namespace tut
       doLineClipTest(
         "POLYGON ((0 10,10 0,0 5,0 10))",
         //"LINESTRING (0 10,10 0,0 5)",
-        "POLYGON ((0 10,10 0,0 5,0 10))",
+        //"POLYGON ((0 10,10 0,0 5,0 10))",
+        "MULTILINESTRING ((0 5, 0 10, 10 0), (10 0, 0 5))",
         Rectangle(0,0,10,10)
       );
     }
@@ -566,7 +578,8 @@ namespace tut
       doLineClipTest(
         "POLYGON ((0 10,5 0,0 5,0 10))",
         //"LINESTRING (0 10,5 0,0 5)",
-        "POLYGON ((0 10,5 0,0 5,0 10))",
+        //"POLYGON ((0 10,5 0,0 5,0 10))",
+        "MULTILINESTRING ((0 5, 0 10, 5 0), (5 0, 0 5))",
         Rectangle(0,0,10,10)
       );
     }
@@ -576,7 +589,8 @@ namespace tut
       doLineClipTest(
         "POLYGON ((0 10,5 5,0 5,0 10))",
         //"LINESTRING (0 10,5 5,0 5)",
-        "POLYGON ((0 10,5 5,0 5,0 10))",
+        //"POLYGON ((0 10,5 5,0 5,0 10))",
+        "LINESTRING (0 5, 0 10, 5 5, 0 5)",
         Rectangle(0,0,10,10)
       );
     }
@@ -585,7 +599,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((0 10,7 7,3 3,0 10))",
-        "POLYGON ((0 10,7 7,3 3,0 10))",
+        //"POLYGON ((0 10,7 7,3 3,0 10))",
+        "LINESTRING (0 10, 7 7, 3 3, 0 10)",
         Rectangle(0,0,10,10)
       );
     }
@@ -594,7 +609,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((0 10,5 5,5 0,0 10))",
-        "POLYGON ((0 10,5 5,5 0,0 10))",
+        //"POLYGON ((0 10,5 5,5 0,0 10))",
+        "LINESTRING (5 0, 0 10, 5 5, 5 0)",
         Rectangle(0,0,10,10)
       );
     }
@@ -603,7 +619,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((0 10,10 5,5 0,0 10))",
-        "POLYGON ((0 10,10 5,5 0,0 10))",
+        //"POLYGON ((0 10,10 5,5 0,0 10))",
+        "MULTILINESTRING ((5 0, 0 10, 10 5), (10 5, 5 0))",
         Rectangle(0,0,10,10)
       );
     }
@@ -621,7 +638,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((2 5,5 10,7 5,2 5))",
-        "POLYGON ((2 5,5 10,7 5,2 5))",
+        //"POLYGON ((2 5,5 10,7 5,2 5))",
+        "LINESTRING (5 10, 7 5, 2 5, 5 10)",
         Rectangle(0,0,10,10)
       );
     }
@@ -630,7 +648,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((0 5,5 10,5 5,0 5))",
-        "POLYGON ((0 5,5 10,5 5,0 5))",
+        //"POLYGON ((0 5,5 10,5 5,0 5))",
+        "LINESTRING (5 10, 5 5, 0 5, 5 10)",
         Rectangle(0,0,10,10)
       );
     }
@@ -639,7 +658,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((0 5,5 10,10 5,0 5))",
-        "POLYGON ((0 5,5 10,10 5,0 5))",
+        //"POLYGON ((0 5,5 10,10 5,0 5))",
+        "MULTILINESTRING ((10 5, 0 5, 5 10), (5 10, 10 5))",
         Rectangle(0,0,10,10)
       );
     }
@@ -648,7 +668,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((0 5,5 7,10 5,0 5))",
-        "POLYGON ((0 5,5 7,10 5,0 5))",
+        //"POLYGON ((0 5,5 7,10 5,0 5))",
+        "LINESTRING (10 5, 0 5, 5 7, 10 5)",
         Rectangle(0,0,10,10)
       );
     }
@@ -1543,7 +1564,7 @@ namespace tut
 
     // Shell overlaps rectangle, hole inside touches edge
     // Found in tests/general/TestFunctionAA.xml: case13: test3
-#if 0 // fails !
+#if 1 // fails !
     template<> template<> void object::test<202>()
     {
 //  Geometry A: POLYGON ((60 160, 140 160, 140 60, 60 60, 60 160))

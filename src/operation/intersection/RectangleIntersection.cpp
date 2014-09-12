@@ -40,6 +40,22 @@ using geos::operation::intersection::Rectangle;
 using geos::operation::intersection::RectangleIntersectionBuilder;
 using namespace geos::geom;
 
+namespace {
+  struct Trace {
+    std::string _name;
+    Trace(const std::string& name): _name(name) {
+#if GEOS_DEBUG
+      std::cout << "--" << _name << " enter" << std::endl;
+#endif
+    };
+    ~Trace() {
+#if GEOS_DEBUG
+      std::cout << "--" << _name << " exit" << std::endl;
+#endif
+    };
+  };
+};
+
 namespace geos {
 namespace operation { // geos::operation
 namespace intersection { // geos::operation::intersection
@@ -127,6 +143,10 @@ RectangleIntersection::clip_linestring_parts(const geom::LineString * gi,
 {
   using namespace geos::geom;
 
+#if GEOS_DEBUG
+  Trace _t("RectangleIntersection::clip_linestring_parts");
+#endif
+
   int n = gi->getNumPoints();
 
   if(gi == NULL || n<1)
@@ -197,6 +217,10 @@ RectangleIntersection::clip_linestring_parts(const geom::LineString * gi,
 		  x0 = cs[i-1].x;
 		  y0 = cs[i-1].y;
 		  clip_to_edges(x0,y0,x,y,rect);
+
+#if GEOS_DEBUG
+      std::cout << "P " << (i-1) << ": " << cs[i-1] << " was last outside" << std::endl;
+#endif
 
 		  if(pos == Rectangle::Inside)
 			{
@@ -271,11 +295,12 @@ std::cout << " Adding point!" << std::endl;
 			}
 		}
 
-	  else
+	  else // inside or edge
 		{
 
 #if GEOS_DEBUG
-      std::cout << "P " << i << ": " << cs[i] << " is inside or on edge" << std::endl;
+      std::cout << "P " << i << ": " << cs[i] << " is " << ( Rectangle::onEdge(pos) ? "on edge" : "inside" )
+                << " -- start_index:" << i << std::endl;
 #endif
 
 		  // The point is now stricly inside or on the edge.
@@ -284,6 +309,7 @@ std::cout << " Adding point!" << std::endl;
 		  // while iterating until we go strictly outside
 
 		  int start_index = i;			// 1st valid original point
+			Rectangle::Position start_pos = pos;
 		  bool go_outside = false;
 
 		  while(!go_outside && ++i<n)
@@ -294,12 +320,41 @@ std::cout << " Adding point!" << std::endl;
 			  Rectangle::Position prev_pos = pos;
 			  pos = rect.position(x,y);
 
-			  if(pos == Rectangle::Inside)
+			  //if(pos == prev_pos)
+			  if(Rectangle::onSameEdge(prev_pos,pos))
 				{
 #if GEOS_DEBUG
-      std::cout << "P " << i << ": " << cs[i] << " is inside" << std::endl;
+      std::cout << "P " << i << ": " << cs[i] << " on same edge, keep going " << std::endl;
 #endif
 				  // Just keep going
+				}
+			  else if(pos == Rectangle::Inside)
+				{
+          if ( ! Rectangle::onEdge(prev_pos) ) {
+#if GEOS_DEBUG
+      std::cout << "P " << i << ": " << cs[i] << " is inside (from inside), keep going" << std::endl;
+#endif
+          } else {
+#if GEOS_DEBUG
+      std::cout << "P " << i << ": " << cs[i] << " is inside (from edge), close edge line" << std::endl;
+      std::cout << " start_index:" << start_index << " i:" << i << std::endl;
+#endif
+            // from edge to inside, add line or point or whatever
+            if(start_index < i-1) {
+              std::vector<Coordinate> *coords = new std::vector<Coordinate>();
+              coords->insert(coords->end(), cs.begin()+start_index, cs.begin()+i);
+              CoordinateSequence *seq = _csf->create(coords);
+              geom::LineString * line = _gf->createLineString(seq);
+              // this is a boundary line
+              parts.add(line, true); // boundary line !
+#if GEOS_DEBUG
+              std::cout << " boundary line added, parts become " << parts << std::endl;
+              std::cout << " added line is " << line->toString() << std::endl;
+#endif
+            }
+            start_index = i-1;
+            start_pos = pos;
+          }
 				}
 			  else if(pos == Rectangle::Outside)
 				{
@@ -316,6 +371,10 @@ std::cout << " Adding point!" << std::endl;
 
 				  bool through_box = (different(x,y,cs[i].x,cs[i].y) &&
 									  !Rectangle::onSameEdge(prev_pos,pos));
+
+#if GEOS_DEBUG
+      std::cout << " through_box:" << through_box << " add_start:" << add_start << " start_index:" << start_index << " i:" << i << std::endl;
+#endif
 
 				  // Output a LineString if it at least one segment long
 
@@ -334,7 +393,13 @@ std::cout << " Adding point!" << std::endl;
 
             CoordinateSequence *seq = _csf->create(coords);
             geom::LineString * line = _gf->createLineString(seq);
+
+            // TODO: check if this was a boundary line !
 					  parts.add(line);
+#if GEOS_DEBUG
+            std::cout << " line added (X), parts become " << parts << std::endl;
+            std::cout << " added line is " << line->toString() << std::endl;
+#endif
 					}
 				  // Output a Point if clipped segment was a point 
           else if ( x == cs[i-1].x && y == cs[i-1].y )
@@ -349,38 +414,51 @@ std::cout << " Adding point!" << std::endl;
 				}
 			  else
 				{
-#if GEOS_DEBUG
-      std::cout << "P " << i << ": " << cs[i] << " is on edge" << std::endl;
-#endif
-				  // on same edge?
-				  if(Rectangle::onSameEdge(prev_pos,pos))
-					{
-					  // Nothing to output if we haven't been elsewhere
-					  if(start_index < i-1 || add_start)
-						{
-              std::vector<Coordinate> *coords = new std::vector<Coordinate>();
-						  if(add_start)
-							{
-						    coords->push_back(Coordinate(x0, y0));
-							  add_start = false;
-							}
-              coords->insert(coords->end(), cs.begin()+start_index, cs.begin()+i);
 
-              CoordinateSequence *seq = _csf->create(coords);
-              geom::LineString * line = _gf->createLineString(seq);
-						  parts.add(line);
-						}
-#if 0
-					  start_index = i;
-std::cout << " start_index updated to " << start_index << std::endl;
+#if GEOS_DEBUG
+          std::cout << "P " << i << ": " << cs[i] << " is on edge (from " << ( Rectangle::onEdge(start_pos) ? "other edge" : "inside" ) << ")" << std::endl;
+          std::cout << " start_index:" << start_index << " i:" << i << " add_start:" << add_start << std::endl;
 #endif
-					}
-				  else
-					{
-					  // On different edge. Must have gone through the box
-					  // then - keep collecting points that generate inside
-					  // line segments
-					}
+
+          // close boundary edge first
+				  if(start_index < i-1 && Rectangle::onEdge(start_pos)) {
+            std::vector<Coordinate> *coords = new std::vector<Coordinate>();
+            coords->insert(coords->end(), cs.begin()+start_index, cs.begin()+i);
+            CoordinateSequence *seq = _csf->create(coords);
+            geom::LineString * line = _gf->createLineString(seq);
+            parts.add(line, true); // boundary line
+#if GEOS_DEBUG
+          std::cout << " boundary line added (XX), parts become " << parts << std::endl;
+          std::cout << " added line is " << line->toString() << std::endl;
+#endif
+            start_index = i-1;
+            start_pos = prev_pos;
+          }
+
+          std::vector<Coordinate> *coords = new std::vector<Coordinate>();
+          if(add_start)
+          {
+            coords->push_back(Coordinate(x0, y0));
+            add_start = false;
+          }
+          coords->insert(coords->end(), cs.begin()+start_index, cs.begin()+i+1);
+#if GEOS_DEBUG
+          //std::cout << "start_index to i makes a " << coords->size() << " array" << std::endl;
+#endif
+
+          // TODO: check if this was a boundary line !
+          CoordinateSequence *seq = _csf->create(coords);
+          geom::LineString * line = _gf->createLineString(seq);
+          parts.add(line);
+#if GEOS_DEBUG
+          std::cout << " line added (XX), parts become " << parts << std::endl;
+          std::cout << " added line is " << line->toString() << std::endl;
+#endif
+          start_index = i;
+          start_pos = pos;
+#if GEOS_DEBUG
+          std::cout << " start_index updated to " << start_index << std::endl;
+#endif
 				}
 			}
 
@@ -388,14 +466,14 @@ std::cout << " start_index updated to " << start_index << std::endl;
 		  // If so, generate no output but return true in this case only
 		  // TODO: review this for holes laying on a boundary !
 		  if(start_index == 0 && i >= n)
-			return true;
+      {
+#if GEOS_DEBUG
+        std::cout << "all inside!" << parts << std::endl;
+#endif
+			  return true;
+      }
 
 		  // Flush the last line segment if data ended and there is something to flush
-
-//Gone outside, start_index:2 add_start:0 through_box:0
-//By the end of the loop start_index:2 n:4 i:3 go_outside:1 add_start:0
-//Position of point 3 is Outside
-
 
 		  if(!go_outside &&						// meaning data ended
 			 (start_index < i-1 || add_start))	// meaning something has to be generated
@@ -414,6 +492,10 @@ std::cout << " start_index updated to " << start_index << std::endl;
         CoordinateSequence *seq = _csf->create(coords);
         geom::LineString * line = _gf->createLineString(seq);
 			  parts.add(line);
+#if GEOS_DEBUG
+        std::cout << " line added, parts become " << parts << std::endl;
+        std::cout << " added line is " << line->toString() << std::endl;
+#endif
 			}
 
 		}
@@ -504,6 +586,10 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
 							  RectangleIntersectionBuilder & toParts,
 							  const Rectangle & rect)
 {
+#if GEOS_DEBUG
+  Trace _t("RectangleIntersection::clip_polygon_to_polygons");
+#endif
+
   if(g == NULL || g->isEmpty())
 	return;
 
@@ -513,6 +599,9 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
 
   // If everything was in, just clone the original
 
+#if GEOS_DEBUG
+  std::cout << "clip shell" << std::endl;
+#endif
   if(clip_linestring_parts(g->getExteriorRing(), parts, rect))
 	{
 	  toParts.add(dynamic_cast<geom::Polygon *>(g->clone()));
@@ -543,6 +632,10 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
 
   parts.reconnect();
 
+#if GEOS_DEBUG
+  std::cout << "After shell parte reconnect, parts are " << parts << std::endl;
+#endif
+
   // Handle the holes now:
   // - Clipped ones become part of the exterior
   // - Intact ones become holes in new polygons formed by exterior parts
@@ -550,6 +643,9 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
   for(int i=0, n=g->getNumInteriorRing(); i<n; ++i)
 	{
 	  RectangleIntersectionBuilder holeparts(*_gf);
+#if GEOS_DEBUG
+  std::cout << "clip hole " << i << std::endl;
+#endif
 	  if(clip_linestring_parts(g->getInteriorRingN(i), holeparts, rect))
 		{
 #if GEOS_DEBUG
@@ -560,12 +656,21 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
       // becomes exterior
 		  Polygon *poly = _gf->createPolygon(hole, 0);
 		  parts.add(poly);
+#if GEOS_DEBUG
+      std::cout << " polygon added, parts become " << parts << std::endl;
+#endif
 		}
 	  else
 		{
+#if GEOS_DEBUG
+      std::cout << "Hole " << i << " parts are " << holeparts << std::endl;
+#endif
 		  if(!holeparts.empty())
 			{
 			  holeparts.reconnect();
+#if GEOS_DEBUG
+      std::cout << "after reconnect, hole " << i << " parts are " << holeparts << std::endl;
+#endif
 			  holeparts.release(parts);
 			}
 		  else
@@ -626,6 +731,9 @@ RectangleIntersection::clip_linestring(const geom::LineString * g,
 
   if(clip_linestring_parts(g, parts, rect))
 	parts.add(dynamic_cast<geom::LineString *>(g->clone()));
+#if GEOS_DEBUG
+  std::cout << " line added, parts become " << parts << std::endl;
+#endif
   
 }
 

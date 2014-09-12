@@ -24,6 +24,26 @@
 #include <geos/algorithm/CGAlgorithms.h>
 #include <geos/util/IllegalArgumentException.h>
 
+#ifndef GEOS_DEBUG
+# define GEOS_DEBUG 0
+#endif
+
+namespace {
+  struct Trace {
+    std::string _name;
+    Trace(const std::string& name): _name(name) {
+#if GEOS_DEBUG
+      std::cout << "--" << _name << " enter" << std::endl;
+#endif
+    };
+    ~Trace() {
+#if GEOS_DEBUG
+      std::cout << "--" << _name << " exit" << std::endl;
+#endif
+    };
+  };
+};
+
 namespace geos {
 namespace operation { // geos::operation
 namespace intersection { // geos::operation::intersection
@@ -160,6 +180,9 @@ std::auto_ptr<geom::Geometry>
 RectangleIntersectionBuilder::build()
 {
   // Total number of objects
+#if GEOS_DEBUG
+  Trace _t("RectangleIntersectionBuilder::build");
+#endif
 
   std::size_t n = size();
 
@@ -202,6 +225,10 @@ double distance(const Rectangle & rect,
 				double x1, double y1,
 				double x2, double y2)
 {
+#if GEOS_DEBUG
+  Trace _t("distance");
+  std::cerr << Coordinate(x1,y1) << " -- " << Coordinate(x2, y2) << std::endl;
+#endif
   double dist = 0;
 
   Rectangle::Position pos = rect.position(x1,y1);
@@ -337,6 +364,10 @@ RectangleIntersectionBuilder::close_boundary(
 					double x1, double y1,
 					double x2, double y2)
 {
+#if GEOS_DEBUG
+  Trace _t("RectangleIntersectionBuilder::close_boundary");
+#endif
+
   Rectangle::Position endpos = rect.position(x2,y2);
   Rectangle::Position pos = rect.position(x1,y1);
 
@@ -392,6 +423,9 @@ RectangleIntersectionBuilder::close_ring(const Rectangle & rect,
 void
 RectangleIntersectionBuilder::reconnectPolygons(const Rectangle & rect)
 {
+#if GEOS_DEBUG
+  Trace _t("RectangleIntersectionBuilder::reconnectPolygons");
+#endif
   // Build the exterior rings first
 
   typedef std::vector< geom::Geometry *> LinearRingVect;
@@ -419,8 +453,15 @@ RectangleIntersectionBuilder::reconnectPolygons(const Rectangle & rect)
 
     std::vector<Coordinate> *ring = NULL;
 
+#if GEOS_DEBUG
+    std::cout << lines.size() << " lines to connect" << std::endl;
+#endif
+
 	  while(!lines.empty() || ring != NULL)
 		{
+#if GEOS_DEBUG
+    std::cout << "lines.size is " << lines.size() << std::endl;
+#endif
 		  if(ring == NULL)
 			{
 			  ring = new std::vector<Coordinate>();
@@ -428,10 +469,16 @@ RectangleIntersectionBuilder::reconnectPolygons(const Rectangle & rect)
 			  lines.pop_front();
         line->getCoordinatesRO()->toVector(*ring);
 			  delete line;
+#if GEOS_DEBUG
+        std::cout << "line has " << ring->size() << " coords" << std::endl;
+#endif
 			}
 
 		  // Distance to own endpoint
 		  double own_distance = distance(rect, *ring);
+#if GEOS_DEBUG
+      std::cout << "own_distance:" << own_distance << std::endl;
+#endif
 
 		  // Find line to connect to
 		  double best_distance = -1;
@@ -445,6 +492,10 @@ RectangleIntersectionBuilder::reconnectPolygons(const Rectangle & rect)
 				  best_pos = iter;
 				}
 			}
+
+#if GEOS_DEBUG
+      std::cout << "best_distance:" << best_distance << std::endl;
+#endif
 
 		  // If own end point is closest, close the ring and continue
 		  if(best_distance < 0 || own_distance < best_distance)
@@ -491,6 +542,11 @@ RectangleIntersectionBuilder::reconnectPolygons(const Rectangle & rect)
 			  lines.erase(best_pos);
 			}
 		}
+
+#if GEOS_DEBUG
+    std::cout << "all lines closed around rect, ring has " << ( ring ? ring->size() : 0 ) << " coords now" << std::endl;
+#endif
+
 	}
 
   if ( exterior.empty() && shellCoversRect ) {
