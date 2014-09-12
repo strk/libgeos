@@ -36,6 +36,8 @@ RectangleIntersectionBuilder::~RectangleIntersectionBuilder()
 	  delete *i;
   for (std::list<geom::LineString *>::iterator i=lines.begin(), e=lines.end(); i!=e; ++i)
 	  delete *i;
+  for (std::list<geom::LineString *>::iterator i=dangling_lines.begin(), e=dangling_lines.end(); i!=e; ++i)
+	  delete *i;
   for (std::list<geom::Point *>::iterator i=points.begin(), e=points.end(); i!=e; ++i)
 	  delete *i;
 }
@@ -89,6 +91,9 @@ void RectangleIntersectionBuilder::release(RectangleIntersectionBuilder & thePar
   for (std::list<geom::Point *>::iterator i=points.begin(), e=points.end(); i!=e; ++i)
 	  theParts.add(*i);
 
+  for (std::list<geom::LineString *>::iterator i=dangling_lines.begin(), e=dangling_lines.end(); i!=e; ++i)
+	  theParts.add(*i, true);
+
   clear();
 }
 
@@ -100,6 +105,7 @@ void RectangleIntersectionBuilder::clear()
 {
   polygons.clear();
   lines.clear();
+  dangling_lines.clear();
   points.clear();
 }
 
@@ -109,7 +115,13 @@ void RectangleIntersectionBuilder::clear()
 
 bool RectangleIntersectionBuilder::empty() const
 {
-  return polygons.empty() && lines.empty() && points.empty();
+  return polygons.empty() && lines.empty() && points.empty() && dangling_lines.empty();
+}
+
+size_t
+RectangleIntersectionBuilder::size() const
+{
+  return polygons.size() + lines.size() + points.size() + dangling_lines.size();
 }
 
 /**
@@ -125,9 +137,14 @@ void RectangleIntersectionBuilder::add(geom::Polygon * thePolygon)
  * \brief Add intermediate LineString
  */
 
-void RectangleIntersectionBuilder::add(geom::LineString * theLine)
+void
+RectangleIntersectionBuilder::add(geom::LineString * theLine, bool dangling)
 {
-  lines.push_back(theLine);
+  if ( dangling ) {
+    dangling_lines.push_back(theLine);
+  } else {
+    lines.push_back(theLine);
+  }
 }
 
 /**
@@ -144,7 +161,7 @@ RectangleIntersectionBuilder::build()
 {
   // Total number of objects
 
-  std::size_t n = polygons.size() + lines.size() + points.size();
+  std::size_t n = size();
 
   if(n == 0) {
 	  return std::auto_ptr<Geometry>(_gf.createGeometryCollection());
@@ -164,6 +181,11 @@ RectangleIntersectionBuilder::build()
   for (std::list<geom::Point *>::iterator i=points.begin(), e=points.end(); i!=e; ++i)
       geoms->push_back(*i);
   points.clear();
+
+  for (std::list<geom::LineString *>::iterator i=dangling_lines.begin(), e=dangling_lines.end(); i!=e; ++i)
+      geoms->push_back(*i);
+  dangling_lines.clear();
+
 
   std::auto_ptr<Geometry> ret(
     (*geoms)[0]->getFactory()->buildGeometry(geoms)
@@ -526,7 +548,8 @@ std::ostream&
 operator<< (std::ostream& os, const RectangleIntersectionBuilder& b)
 {
   os << b.points.size() << " points, " << b.lines.size() << " lines, "
-     << b.polygons.size() << " polys";
+     << b.polygons.size() << " polys, "
+     << b.dangling_lines.size() << " dangling lines";
   if ( b.shellCoversRect ) os << ", shell covers rect";
   return os;
 }

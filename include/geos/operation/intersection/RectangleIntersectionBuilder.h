@@ -116,16 +116,18 @@ private:
 
   // Adding Geometry components
   void add(geom::Polygon * g);
-  void add(geom::LineString * g);
+  void add(geom::LineString * g, bool dangling=false);
   void add(geom::Point * g);
 
   // Trivial methods
   bool empty() const;
+  size_t size() const;
   void clear();
 
   // Added components
   std::list<geom::Polygon *> polygons;
   std::list<geom::LineString *> lines;
+  std::list<geom::LineString *> dangling_lines;
   std::list<geom::Point *> points;
 
   // Set to true of shell is known to fully cover the rectangle
