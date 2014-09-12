@@ -1551,8 +1551,9 @@ namespace tut
 
       Rectangle r(0,0,10,10);
       const char *inp =
-        "POLYGON((5 2,5 8,15 8,15 2,5 2),(8 4, 8 6, 10 6, 10 4, 8 4))";
+        "POLYGON((5 2,5 8,15 8,15 2,5 2),(8 4, 10 4, 10 6, 8 6, 8 4))";
       char *exp = "GEOMETRYCOLLECTION (LINESTRING (10 4, 10 6), POLYGON ((10 4, 10 2, 5 2, 5 8, 10 8, 10 6, 8 6, 8 4, 10 4)))";
+      // POLYGON ((5 2, 5 8, 10 8, 10 2, 5 2), (8 4, 8 6, 10 6, 10 4, 8 4))
       doClipTest(inp, exp, r);
 
 #if 0
