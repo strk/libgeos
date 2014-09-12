@@ -42,7 +42,7 @@ namespace {
 #endif
     };
   };
-};
+}
 
 namespace geos {
 namespace operation { // geos::operation
@@ -225,9 +225,8 @@ double distance(const Rectangle & rect,
 				double x1, double y1,
 				double x2, double y2)
 {
-#if GEOS_DEBUG
+#if GEOS_DEBUG > 1
   Trace _t("distance");
-  std::cerr << Coordinate(x1,y1) << " -- " << Coordinate(x2, y2) << std::endl;
 #endif
   double dist = 0;
 
@@ -500,6 +499,9 @@ RectangleIntersectionBuilder::reconnectPolygons(const Rectangle & rect)
 		  // If own end point is closest, close the ring and continue
 		  if(best_distance < 0 || own_distance < best_distance)
 			{
+#if GEOS_DEBUG
+      std::cout << " own end point is closest" << std::endl;
+#endif
         geom::LinearRing *valid_shell = 0;
         // TODO: check ring invalidity before moving on ...
         std::vector<Coordinate> *newring = new std::vector<Coordinate>(*ring);
@@ -607,6 +609,10 @@ operator<< (std::ostream& os, const RectangleIntersectionBuilder& b)
      << b.polygons.size() << " polys, "
      << b.dangling_lines.size() << " dangling lines";
   if ( b.shellCoversRect ) os << ", shell covers rect";
+
+  size_t i = 0;
+	for(std::list<LineString*>::const_iterator iter=b.lines.begin(); iter!=b.lines.end(); ++iter)
+    os << std::endl << "Line " << (i++) << ": " << (*iter)->toString();
   return os;
 }
 

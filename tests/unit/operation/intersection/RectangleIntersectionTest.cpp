@@ -1327,6 +1327,7 @@ namespace tut
       doClipTest(
         "POLYGON ((5 0,-5 0,-5 10,5 0))",
         "POLYGON ((0 0,0 5,5 0,0 0))",
+//GEOMETRYCOLLECTION (POLYGON ((0 0, 0 10, 10 10, 10 0, 0 0)), LINESTRING (0 5, 5 0))
         Rectangle(0,0,10,10)
       );
     }
@@ -1562,28 +1563,26 @@ namespace tut
       doClipTest(inp, exp, r);
     }
 
-    // Shell overlaps rectangle, hole inside touches edge
-    // Found in tests/general/TestFunctionAA.xml: case13: test3
-#if 1 // fails !
+    // Shell overlaps rectangle, holes inside touch edges
+    // Inspired by tests/general/TestFunctionAA.xml: case13: test3
     template<> template<> void object::test<202>()
     {
-//  Geometry A: POLYGON ((60 160, 140 160, 140 60, 60 60, 60 160))
-//  Geometry B: POLYGON ((160 160, 100 160, 100 100, 160 100, 160 160), (140 140, 120 140, 120 120, 140 120, 140 140))
-
       Rectangle r(0,0,10,10);
       const char *inp =
-        "POLYGON((5 2,5 8,15 8,15 2,5 2),(8 4, 10 4, 10 6, 8 6, 8 4))";
-      char *exp = "GEOMETRYCOLLECTION (LINESTRING (10 4, 10 6), POLYGON ((10 4, 10 2, 5 2, 5 8, 10 8, 10 6, 8 6, 8 4, 10 4)))";
-      // POLYGON ((5 2, 5 8, 10 8, 10 2, 5 2), (8 4, 8 6, 10 6, 10 4, 8 4))
+        "POLYGON((-1 -1,-1 11,11 11,11 -1,-1 -1),"
+                "(8 4, 10 4, 10 6, 8 6, 8 4)," // right edge
+                "(0 4, 2 4, 2 6, 0 6, 0 4)," // left edge
+                "(4 8, 6 8, 6 10, 4 10, 4 8)," // top edge
+                "(4 0, 6 0, 6 2, 4 2, 4 0)" // bottom edge
+                ")";
+      const char *exp = "GEOMETRYCOLLECTION ("
+        "LINESTRING (10 4, 10 6),"
+        "LINESTRING (0 6, 0 4),"
+        "LINESTRING (6 10, 4 10),"
+        "LINESTRING (4 0, 6 0),"
+        "POLYGON ((8 4, 10 4, 10 0, 6 0, 6 2, 4 2, 4 0, 0 0, 0 4, 2 4, 2 6, 0 6, 0 10, 4 10, 4 8, 6 8, 6 10, 10 10, 10 6, 8 6, 8 4))"
+        ")";
       doClipTest(inp, exp, r);
-
-#if 0
-      exp = "LINESTRING(5 2,5 8,10 8,10 6,8 6,8 4,10 4,10 2,5 2)";
-      //GEOMETRYCOLLECTION (POLYGON ((8 4, 8 6, 10 6, 10 4, 8 4)), LINESTRING (10 2, 5 2, 5 8, 10 8))
-      doLineClipTest(inp, exp, r);
-#endif
     }
-#endif
-
 
 }

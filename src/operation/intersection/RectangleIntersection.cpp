@@ -54,7 +54,7 @@ namespace {
 #endif
     };
   };
-};
+}
 
 namespace geos {
 namespace operation { // geos::operation
@@ -474,10 +474,21 @@ std::cout << " Adding point!" << std::endl;
       }
 
 		  // Flush the last line segment if data ended and there is something to flush
+#if GEOS_DEBUG
+        std::cout << "at end of inside-or-edge handling (flush-time), "
+                  << " start_index:" << start_index << " i:" << i
+                  << " add_start:" << add_start
+                  << " go_outside:" << go_outside
+                  << std::endl
+                  ;
+#endif
 
 		  if(!go_outside &&						// meaning data ended
 			 (start_index < i-1 || add_start))	// meaning something has to be generated
 			{
+        // check if this is a boundary line flush...
+        bool isBoundaryLine = Rectangle::onSameEdge(pos,start_pos) && ! add_start;
+
         std::vector<Coordinate> *coords = new std::vector<Coordinate>();
 			  //geom::LineString * line = new geom::LineString();
 			  if(add_start)
@@ -491,9 +502,10 @@ std::cout << " Adding point!" << std::endl;
 
         CoordinateSequence *seq = _csf->create(coords);
         geom::LineString * line = _gf->createLineString(seq);
-			  parts.add(line);
+			  parts.add(line, isBoundaryLine);
 #if GEOS_DEBUG
-        std::cout << " line added, parts become " << parts << std::endl;
+        std::cout << (isBoundaryLine ? " boundary" : "" )
+                  << " line added (ZZ), parts become " << parts << std::endl;
         std::cout << " added line is " << line->toString() << std::endl;
 #endif
 			}
