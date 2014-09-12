@@ -57,8 +57,8 @@ namespace intersection { // geos::operation::intersection
  * clipping, the second clips the boundaries of polygons, not
  * the polygons themselves. In the first case a polygon will remain
  * a polygon or is completely cut out. In the latter case polygons
- * will be converted to polylines if any vertex is outside the clipping
- * rectangle, or will be cut out completely.
+ * will be converted to polylines only if not fully inside or fully outside
+ * of the rectangle.
  *
  * The algorithm works best when the number of intersections is very low.
  * For example, if the geometry is completely to the left of the
