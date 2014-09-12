@@ -1585,4 +1585,28 @@ namespace tut
       doClipTest(inp, exp, r);
     }
 
+    // Shell overlaps rectangle, hole outside touch edge
+    template<> template<> void object::test<203>()
+    {
+      Rectangle r(0,0,10,10);
+      const char *inp =
+        "POLYGON((-10 -10,-10 20,20 20,20 -10,-10 -10),"
+                "(10 4, 12 4, 12 6, 10 6, 10 4)," // right edge
+                "(-2 4, 0 4, 0 6, -2 6, -2 4)," // left edge
+                "(4 10, 6 10, 6 12, 4 12, 4 10)," // top edge
+                "(4 -2, 6 -2, 6 0, 4 0, 4 -2)" // bottom edge
+                ")";
+      const char *exp = "POLYGON((0 0,0 10,10 10,10 0,0 0))";
+      // or, retaining all noded points from holes intersection:
+      // POLYGON ((10 6, 10 4, 10 0, 6 0, 4 0, 0 0, 0 4, 0 6, 0 10, 4 10, 6 10, 10 10, 10 6))
+
+// WARNING: the tester fails to detect this discrepancy:
+// GEOMETRYCOLLECTION (
+//       POLYGON ((0 0, 0 4, 0 6, 0 10, 4 10, 6 10, 10 10, 10 0, 6 0, 4 0, 0 0)),
+//       POINT (10 4),
+//       LINESTRING (10 6, 10 4))
+
+      doClipTest(inp, exp, r);
+    }
+
 }
