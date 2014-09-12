@@ -61,9 +61,17 @@ namespace tut
         {
           using std::cout;
           using std::endl;
+          using namespace geos::geom;
           bool eq;
           if ( ! tolerance ) {
-            eq = a.equals(&b);
+#if 0 // WARNING: this must be enabled !
+            if ( a.getGeometryTypeId() == GEOS_GEOMETRYCOLLECTION ) {
+              eq = b.getGeometryTypeId() == GEOS_GEOMETRYCOLLECTION;
+            } else if ( b.getGeometryTypeId() == GEOS_GEOMETRYCOLLECTION ) {
+              eq = false;
+            }
+#endif
+            if ( eq ) eq = a.equals(&b);
             if  ( ! eq ) {
               cout << "OBTAINED: " << wktwriter.write(&b) << endl;
             }
@@ -1596,9 +1604,8 @@ namespace tut
                 "(4 10, 6 10, 6 12, 4 12, 4 10)," // top edge
                 "(4 -2, 6 -2, 6 0, 4 0, 4 -2)" // bottom edge
                 ")";
-      const char *exp = "POLYGON((0 0,0 10,10 10,10 0,0 0))";
-      // or, retaining all noded points from holes intersection:
-      // POLYGON ((10 6, 10 4, 10 0, 6 0, 4 0, 0 0, 0 4, 0 6, 0 10, 4 10, 6 10, 10 10, 10 6))
+      const char *exp =
+        "POLYGON ((0 0, 0 4, 0 6, 0 10, 4 10, 6 10, 10 10, 10 6, 10 4, 10 0, 6 0, 4 0, 0 0))";
 
 // WARNING: the tester fails to detect this discrepancy:
 // GEOMETRYCOLLECTION (
