@@ -67,8 +67,11 @@ namespace intersection { // geos::operation::intersection
  * of the rectangle. Hence clipping may be faster than calculating
  * the envelope of the geometry for trivial overlap tests.
  *
- * The input geometry must be valid. In particular all {@link LinearRing}s must
- * be properly closed, or the algorithm may not terminate.
+ * The input geometry must be valid and obey to the right-hand-rule.
+ *
+ * Non-closed {@link LinearRing}s would result in an infinite loop
+ * (but it should be impossible in GEOS to construct polygons with
+ * non-closed rings anyway).
  *
  */
 class GEOS_DLL RectangleIntersection
