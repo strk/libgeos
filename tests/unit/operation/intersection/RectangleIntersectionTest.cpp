@@ -62,7 +62,7 @@ namespace tut
           using std::cout;
           using std::endl;
           using namespace geos::geom;
-          bool eq;
+          bool eq = true;
           if ( ! tolerance ) {
 #if 0 // WARNING: this must be enabled !
             if ( a.getGeometryTypeId() == GEOS_GEOMETRYCOLLECTION ) {
