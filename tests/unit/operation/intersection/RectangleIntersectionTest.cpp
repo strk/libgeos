@@ -1597,4 +1597,24 @@ namespace tut
       doClipTest(inp, exp, r);
     }
 
+    // Simple overlap, counter-clockwise shell
+    // Found in TestFunctionAA.xml case1 test1
+#if 0 // fails !
+    template<> template<> void object::test<204>()
+    {
+/*
+        Geometry A: POLYGON ((10 10, 100 10, 100 100, 10 100, 10 10))
+        Geometry B: POLYGON ((50 50, 200 50, 200 200, 50 200, 50 50))
+        Expected result: POLYGON ((50 50, 50 100, 100 100, 100 50, 50 50))
+        Obtained result: POLYGON ((10 10, 10 100, 50 100, 50 50, 100 50, 100 10, 10 10))
+*/
+      Rectangle r(10,10,100,100);
+      const char *inp =
+        "POLYGON ((50 50, 200 50, 200 200, 50 200, 50 50))";
+      const char *exp =
+        "POLYGON ((50 50, 50 100, 100 100, 100 50, 50 50))";
+      doClipTest(inp, exp, r);
+    }
+#endif
+
 }
