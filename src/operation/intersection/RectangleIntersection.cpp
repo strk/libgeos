@@ -711,7 +711,7 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
   parts.reconnect();
 
 #if GEOS_DEBUG
-  std::cout << "After shell parte reconnect, parts are " << parts << std::endl;
+  std::cout << "After shell parts reconnect, parts are " << parts << std::endl;
 #endif
 
   // Handle the holes now:
@@ -776,7 +776,13 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
   std::cout << "by the end of clip_polygon_to_polygons, parts are " << parts << std::endl;
 #endif
 
-  parts.reconnectPolygons(rect);
+  bool cwshell = true;
+  if ( ! toParts.shellCoversRect ) {
+    using geos::algorithm::CGAlgorithms;
+    const LineString *shell = g->getExteriorRing();
+    cwshell = !CGAlgorithms::isCCW(shell->getCoordinatesRO());
+  }
+  parts.reconnectPolygons(rect, cwshell);
 
   parts.release(toParts);
 

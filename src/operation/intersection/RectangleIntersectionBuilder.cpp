@@ -420,7 +420,7 @@ RectangleIntersectionBuilder::close_ring(const Rectangle & rect,
 
 
 void
-RectangleIntersectionBuilder::reconnectPolygons(const Rectangle & rect)
+RectangleIntersectionBuilder::reconnectPolygons(const Rectangle & rect, bool cwshell)
 {
 #if GEOS_DEBUG
   Trace _t("RectangleIntersectionBuilder::reconnectPolygons");
@@ -447,6 +447,8 @@ RectangleIntersectionBuilder::reconnectPolygons(const Rectangle & rect)
 	}
   else
 	{
+    if ( ! cwshell ) reverseLines();
+
 	  // Reconnect all lines into one or more linearrings
 	  // using box boundaries if necessary
 
@@ -600,6 +602,22 @@ RectangleIntersectionBuilder::reconnectPolygons(const Rectangle & rect)
 
   lines = dangling_lines;
   polygons = new_polygons;
+}
+
+void
+RectangleIntersectionBuilder::reverseLines()
+{
+  std::list<geom::LineString *> new_lines;
+  for (std::list<geom::LineString *>::reverse_iterator i=lines.rbegin(), e=lines.rend(); i!=e; ++i)
+  {
+    LineString *ol = *i;
+	  new_lines.push_back(dynamic_cast<LineString*>(ol->reverse()));
+    delete ol;
+  }
+  lines = new_lines;
+#if GEOS_DEBUG
+  std::cout << "After lines reverse, parts are " << *this << std::endl;
+#endif
 }
 
 std::ostream&

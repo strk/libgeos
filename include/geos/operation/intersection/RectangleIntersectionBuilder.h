@@ -85,7 +85,7 @@ private:
    * 1. Build exterior ring(s) from lines
    * 2. Attach polygons as holes to the exterior ring(s)
    */
-  void reconnectPolygons(const Rectangle & rect);
+  void reconnectPolygons(const Rectangle & rect, bool cwshell);
 
   /**
    * Reconnect disjointed parts
@@ -155,6 +155,8 @@ private:
 
   RectangleIntersectionBuilder(const geom::GeometryFactory& f)
     : shellCoversRect(false), _gf(f) {}
+
+  void reverseLines();
 
   const geom::GeometryFactory &_gf;
 
