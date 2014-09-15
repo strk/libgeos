@@ -406,13 +406,16 @@ std::cout << " Adding point!" << std::endl;
 				  // Output a Point if clipped segment was a point 
           else if ( x == cs[i-1].x && y == cs[i-1].y )
           {
-            // TODO: skip adding the point if it was already the endpoint
-            //       of last added line (boundary or not) ?
+            // skip adding the point if previous one was inside or on edge
+            if ( i < 2 || rect.position(cs[i-2].x, cs[i-2].y) == Rectangle::Outside )
+            {
 #if GEOS_DEBUG
-std::cout << " adding point " << cs[i-1] << std::endl;
+std::cout << " adding point (" << i << ") " << cs[i-1] << " -- position of point " << (i-2) << " " << cs[i-2] << " is " << rect.position(cs[i-2].x, cs[i-2].y) << std::endl;
 #endif
-            geom::Point *point = _gf->createPoint(cs[i-1]);
-            parts.add(point);
+              // in-or-edge to outside
+              geom::Point *point = _gf->createPoint(cs[i-1]);
+              parts.add(point);
+            }
           }
 				  // And continue main loop on the outside
 				}
