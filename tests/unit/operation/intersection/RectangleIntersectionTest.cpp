@@ -64,7 +64,7 @@ namespace tut
           using namespace geos::geom;
           bool eq = true;
           if ( ! tolerance ) {
-#if 0 // WARNING: this must be enabled !
+#if 1 // WARNING: this must be enabled !
             if ( a.getGeometryTypeId() == GEOS_GEOMETRYCOLLECTION ) {
               eq = b.getGeometryTypeId() == GEOS_GEOMETRYCOLLECTION;
             } else if ( b.getGeometryTypeId() == GEOS_GEOMETRYCOLLECTION ) {
@@ -107,7 +107,7 @@ namespace tut
           using std::endl;
           using geos::operation::valid::IsValidOp;
           using geos::operation::valid::TopologyValidationError;
-#if 1
+#if 1 // Run trough RectangleIntersection
           obt = RectangleIntersection::clip(*g,rect);
           ensure(obt.get());
           IsValidOp isValidOp(obt.get());
@@ -121,8 +121,7 @@ namespace tut
           ok = isEqual(*readWKT(expectedWKT), *obt, tolerance);
           ensure(ok);
 #endif
-// Compare with GEOSIntersection output
-#if 1
+#if 1 // Compare with GEOSIntersection output
           GeomPtr g2 ( rect.toPolygon(*g->getFactory()) );
           obt.reset(g->intersection(g2.get()));
           //ensure(obt->isValid());
@@ -1520,7 +1519,10 @@ namespace tut
     template<> template<> void object::test<142>()
     {
       doClipTest(
-        "POLYGON ((-15 -15,-15 15,15 15,15 -15,-15 -15),(0 5,-1 5,-1 6,0 6,0 5))",
+        // this version has clockwise hole (won't work)
+        //"POLYGON ((-15 -15,-15 15,15 15,15 -15,-15 -15),(0 5,-1 5,-1 6,0 6,0 5))",
+        // this version has counterclockwise hole (correct)
+        "POLYGON((-15 -15,-15 15,15 15,15 -15,-15 -15),(0 5,0 6,-1 6,-1 5,0 5))",
         "POLYGON ((0 0,0 10,10 10,10 0,0 0))",
         Rectangle(0,0,10,10)
       );

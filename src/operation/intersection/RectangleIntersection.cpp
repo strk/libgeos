@@ -132,6 +132,7 @@ RectangleIntersection::clip_point(const geom::Point * g,
   double x = g->getX();
   double y = g->getY();
   
+  // TODO: also include point if on boundary 
   if(rect.position(x,y) == Rectangle::Inside)
 	parts.add(dynamic_cast<geom::Point*>(g->clone()));
 }
@@ -444,8 +445,10 @@ std::cout << " Adding point!" << std::endl;
             std::cout << " added line is " << line->toString() << std::endl;
 #endif
 					}
-				  // Output a Point if clipped segment was a point 
-          else if ( x == cs[i-1].x && y == cs[i-1].y )
+				  // Output a Point if clipped segment was a point.
+          // skip adding the point if we're handling an hole
+          // (an hole will have includeBoundary == 1)
+          else if ( includeBoundary != 1 && x == cs[i-1].x && y == cs[i-1].y )
           {
             // skip adding the point if previous one was inside or on edge
             if ( i < 2 || rect.position(cs[i-2].x, cs[i-2].y) == Rectangle::Outside )
