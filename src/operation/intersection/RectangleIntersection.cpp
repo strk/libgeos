@@ -174,6 +174,12 @@ bool wantsBoundary(int includeBounds, const Rectangle & rect, const geom::Coordi
   return includeBounds == 1 ? ccw : !ccw;
 }
 
+bool wantsPoint(int includeBounds)
+{
+  // Either 0 (never include) or 3 (always include)
+  return includeBounds != 1 && includeBounds != 2;
+}
+
 bool
 RectangleIntersection::clip_linestring_parts(const geom::LineString * gi,
 						   RectangleIntersectionBuilder & parts,
@@ -448,7 +454,7 @@ std::cout << " Adding point!" << std::endl;
 				  // Output a Point if clipped segment was a point.
           // skip adding the point if we're handling an hole
           // (an hole will have includeBoundary == 1)
-          else if ( includeBoundary != 1 && x == cs[i-1].x && y == cs[i-1].y )
+          else if ( wantsPoint(includeBoundary) && x == cs[i-1].x && y == cs[i-1].y )
           {
             // skip adding the point if previous one was inside or on edge
             if ( i < 2 || rect.position(cs[i-2].x, cs[i-2].y) == Rectangle::Outside )
@@ -625,8 +631,12 @@ RectangleIntersection::clip_polygon_to_linestrings(const geom::Polygon * g,
 
   for(int i=0, n=g->getNumInteriorRing(); i<n; ++i)
 	{
-    // include counterclockwise boundaries
-	  if(clip_linestring_parts(g->getInteriorRingN(i), parts, rect, 1))
+    const LineString* lr = g->getInteriorRingN(i);
+    // include boundaries going around rectangle with the same
+    // winding of the hole (counterclockwise if ring is counterclockwise)
+    using geos::algorithm::CGAlgorithms;
+    int incBounds = CGAlgorithms::isCCW(lr->getCoordinatesRO()) ? 1 : 2;
+	  if(clip_linestring_parts(lr, parts, rect, incBounds))
 		{
 #if GEOS_DEBUG
       std::cout << "Hole " << i << " completely wraps the rect" << std::endl;
@@ -714,8 +724,12 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
 #if GEOS_DEBUG
   std::cout << "clip hole " << i << std::endl;
 #endif
-    // include counterclockwise boundaries
-	  if(clip_linestring_parts(g->getInteriorRingN(i), holeparts, rect, 1))
+    const LineString* lr = g->getInteriorRingN(i);
+    // include boundaries going around rectangle with the same
+    // winding of the hole (counterclockwise if ring is counterclockwise)
+    using geos::algorithm::CGAlgorithms;
+    int incBounds = CGAlgorithms::isCCW(lr->getCoordinatesRO()) ? 1 : 2;
+	  if(clip_linestring_parts(lr, holeparts, rect, incBounds))
 		{
 #if GEOS_DEBUG
       std::cout << "Hole " << i << " full inside " << std::endl;

@@ -1519,10 +1519,10 @@ namespace tut
     template<> template<> void object::test<142>()
     {
       doClipTest(
-        // this version has clockwise hole (won't work)
-        //"POLYGON ((-15 -15,-15 15,15 15,15 -15,-15 -15),(0 5,-1 5,-1 6,0 6,0 5))",
-        // this version has counterclockwise hole (correct)
-        "POLYGON((-15 -15,-15 15,15 15,15 -15,-15 -15),(0 5,0 6,-1 6,-1 5,0 5))",
+        // NOTE: this version has clockwise hole
+        "POLYGON ((-15 -15,-15 15,15 15,15 -15,-15 -15),(0 5,-1 5,-1 6,0 6,0 5))",
+        // this version has counterclockwise hole 
+        //"POLYGON((-15 -15,-15 15,15 15,15 -15,-15 -15),(0 5,0 6,-1 6,-1 5,0 5))",
         "POLYGON ((0 0,0 10,10 10,10 0,0 0))",
         Rectangle(0,0,10,10)
       );
