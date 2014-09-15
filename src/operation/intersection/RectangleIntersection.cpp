@@ -136,10 +136,47 @@ RectangleIntersection::clip_point(const geom::Point * g,
 	parts.add(dynamic_cast<geom::Point*>(g->clone()));
 }
 
+bool isCCW(const Rectangle & rect, const geom::Coordinate& c0, const geom::Coordinate& c1)
+{
+  Rectangle::Position p0 = rect.position(c0.x, c0.y);
+  Rectangle::Position p1 = rect.position(c1.x, c1.y);
+  Rectangle::Position cp = Rectangle::Position(p0 & p1); // common edge
+  bool ccw = false;
+  // Only boundary edges from _internal_ holes are needed.
+  // Internal holes would traverse the rectangle in
+  // counter-clockwise direction.
+  switch (cp) {
+    case Rectangle::Top:
+      ccw = c1.x < c0.x; // goes left
+      break;
+    case Rectangle::Bottom:
+      ccw = c0.x < c1.x; // goes right
+      break;
+    case Rectangle::Left:
+      ccw = c1.y < c0.y; // goes down
+      break;
+    case Rectangle::Right:
+      ccw = c0.y < c1.y; // goes up
+      break;
+    default:
+      // assert should not get here ?
+      break;
+  }
+  return ccw;
+}
+
+bool wantsBoundary(int includeBounds, const Rectangle & rect, const geom::Coordinate& c0, const geom::Coordinate& c1)
+{
+  if ( ! includeBounds ) return false;
+  if ( includeBounds > 2 ) return true;
+  bool ccw = isCCW(rect, c0, c1);
+  return includeBounds == 1 ? ccw : !ccw;
+}
+
 bool
 RectangleIntersection::clip_linestring_parts(const geom::LineString * gi,
 						   RectangleIntersectionBuilder & parts,
-						   const Rectangle & rect)
+						   const Rectangle & rect, int includeBoundary)
 {
   using namespace geos::geom;
 
@@ -341,16 +378,20 @@ std::cout << " Adding point!" << std::endl;
 #endif
             // from edge to inside, add line or point or whatever
             if(start_index < i-1) {
-              std::vector<Coordinate> *coords = new std::vector<Coordinate>();
-              coords->insert(coords->end(), cs.begin()+start_index, cs.begin()+i);
-              CoordinateSequence *seq = _csf->create(coords);
-              geom::LineString * line = _gf->createLineString(seq);
               // this is a boundary line
-              parts.add(line, true); // boundary line !
+              const geom::Coordinate& c0 = *(cs.begin()+start_index);
+              const geom::Coordinate& c1 = *(cs.begin()+start_index+1);
+              if ( wantsBoundary(includeBoundary, rect, c0, c1) ) {
+                std::vector<Coordinate> *coords = new std::vector<Coordinate>();
+                coords->insert(coords->end(), cs.begin()+start_index, cs.begin()+i);
+                CoordinateSequence *seq = _csf->create(coords);
+                geom::LineString * line = _gf->createLineString(seq);
+                parts.add(line, includeBoundary != 3); // boundary line !
 #if GEOS_DEBUG
-              std::cout << " boundary line added, parts become " << parts << std::endl;
-              std::cout << " added line is " << line->toString() << std::endl;
+                std::cout << " boundary line added, parts become " << parts << std::endl;
+                std::cout << " added line is " << line->toString() << std::endl;
 #endif
+              }
             }
             start_index = i-1;
             start_pos = pos;
@@ -396,7 +437,7 @@ std::cout << " Adding point!" << std::endl;
             CoordinateSequence *seq = _csf->create(coords);
             geom::LineString * line = _gf->createLineString(seq);
 
-            // TODO: check if this was a boundary line !
+            // TODO: check if this was a boundary line ?
 					  parts.add(line);
 #if GEOS_DEBUG
             std::cout << " line added (X), parts become " << parts << std::endl;
@@ -429,15 +470,21 @@ std::cout << " adding point (" << i << ") " << cs[i-1] << " -- position of point
 
           // close boundary edge first
 				  if(start_index < i-1 && Rectangle::onEdge(start_pos)) {
-            std::vector<Coordinate> *coords = new std::vector<Coordinate>();
-            coords->insert(coords->end(), cs.begin()+start_index, cs.begin()+i);
-            CoordinateSequence *seq = _csf->create(coords);
-            geom::LineString * line = _gf->createLineString(seq);
-            parts.add(line, true); // boundary line
+            if ( includeBoundary ) {
+              std::vector<Coordinate> *coords = new std::vector<Coordinate>();
+              coords->insert(coords->end(), cs.begin()+start_index, cs.begin()+i);
+              const Coordinate& c0 = (*coords)[0];
+              const Coordinate& c1 = (*coords)[1];
+              if ( wantsBoundary(includeBoundary, rect, c0, c1) ) {
+                CoordinateSequence *seq = _csf->create(coords);
+                geom::LineString * line = _gf->createLineString(seq);
+                parts.add(line, includeBoundary != 3); // boundary line
 #if GEOS_DEBUG
           std::cout << " boundary line added (XX), parts become " << parts << std::endl;
           std::cout << " added line is " << line->toString() << std::endl;
 #endif
+              }
+            }
             start_index = i-1;
             start_pos = prev_pos;
           }
@@ -495,26 +542,24 @@ std::cout << " adding point (" << i << ") " << cs[i-1] << " -- position of point
 			{
         // check if this is a boundary line flush...
         bool isBoundaryLine = Rectangle::onSameEdge(pos,start_pos) && ! add_start;
+        if ( ! isBoundaryLine || wantsBoundary(includeBoundary, rect, *(cs.begin()+start_index), *(cs.begin()+start_index+1)) ) {
+          std::vector<Coordinate> *coords = new std::vector<Coordinate>();
+          if(add_start)
+          {
+            coords->push_back(Coordinate(x0, y0));
+            add_start = false;
+          }
+          coords->insert(coords->end(), cs.begin()+start_index, cs.begin()+i);
 
-        std::vector<Coordinate> *coords = new std::vector<Coordinate>();
-			  //geom::LineString * line = new geom::LineString();
-			  if(add_start)
-				{
-				  //line->addPoint(x0,y0);
-					coords->push_back(Coordinate(x0, y0));
-				  add_start = false;
-				}
-			  //line->addSubLineString(&g, start_index, i-1);
-        coords->insert(coords->end(), cs.begin()+start_index, cs.begin()+i);
-
-        CoordinateSequence *seq = _csf->create(coords);
-        geom::LineString * line = _gf->createLineString(seq);
-			  parts.add(line, isBoundaryLine);
+          CoordinateSequence *seq = _csf->create(coords);
+          geom::LineString * line = _gf->createLineString(seq);
+          parts.add(line, isBoundaryLine && includeBoundary != 3);
 #if GEOS_DEBUG
-        std::cout << (isBoundaryLine ? " boundary" : "" )
-                  << " line added (ZZ), parts become " << parts << std::endl;
-        std::cout << " added line is " << line->toString() << std::endl;
+          std::cout << (isBoundaryLine && includeBoundary != 3 ? " boundary" : "" )
+                    << " line added (ZZ), parts become " << parts << std::endl;
+          std::cout << " added line is " << line->toString() << std::endl;
 #endif
+        }
 			}
 
 		}
@@ -542,7 +587,7 @@ RectangleIntersection::clip_polygon_to_linestrings(const geom::Polygon * g,
 
   // If everything was in, just clone the original
 
-  if(clip_linestring_parts(g->getExteriorRing(), parts, rect))
+  if(clip_linestring_parts(g->getExteriorRing(), parts, rect, 0))
 	{
 	  toParts.add(dynamic_cast<geom::Polygon *>(g->clone()));
 	  return;
@@ -577,7 +622,8 @@ RectangleIntersection::clip_polygon_to_linestrings(const geom::Polygon * g,
 
   for(int i=0, n=g->getNumInteriorRing(); i<n; ++i)
 	{
-	  if(clip_linestring_parts(g->getInteriorRingN(i), parts, rect))
+    // include counterclockwise boundaries
+	  if(clip_linestring_parts(g->getInteriorRingN(i), parts, rect, 1))
 		{
 #if GEOS_DEBUG
       std::cout << "Hole " << i << " completely wraps the rect" << std::endl;
@@ -621,7 +667,7 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
 #if GEOS_DEBUG
   std::cout << "clip shell" << std::endl;
 #endif
-  if(clip_linestring_parts(g->getExteriorRing(), parts, rect))
+  if(clip_linestring_parts(g->getExteriorRing(), parts, rect, 0))
 	{
 	  toParts.add(dynamic_cast<geom::Polygon *>(g->clone()));
 	  return;
@@ -665,7 +711,8 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
 #if GEOS_DEBUG
   std::cout << "clip hole " << i << std::endl;
 #endif
-	  if(clip_linestring_parts(g->getInteriorRingN(i), holeparts, rect))
+    // include counterclockwise boundaries
+	  if(clip_linestring_parts(g->getInteriorRingN(i), holeparts, rect, 1))
 		{
 #if GEOS_DEBUG
       std::cout << "Hole " << i << " full inside " << std::endl;
@@ -748,7 +795,8 @@ RectangleIntersection::clip_linestring(const geom::LineString * g,
 
   // If everything was in, just clone the original
 
-  if(clip_linestring_parts(g, parts, rect))
+  // include all boundaries
+  if(clip_linestring_parts(g, parts, rect, 3))
 	parts.add(dynamic_cast<geom::LineString *>(g->clone()));
 #if GEOS_DEBUG
   std::cout << " line added, parts become " << parts << std::endl;

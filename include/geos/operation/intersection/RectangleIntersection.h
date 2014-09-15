@@ -168,10 +168,14 @@ private:
    *
    * Returns true if the geometry was fully inside, and does not output
    * anything to RectangleIntersectionBuilder.
+   *
+   * @param includeBoundary bitfield 1:counterclowise 2:clockwise
+   *        If both CCW and CW boundaries have to be included, they'll
+   *        not be considered "dangling" (useful for linestrings)
    */
   bool clip_linestring_parts(const geom::LineString * gi,
                RectangleIntersectionBuilder & parts,
-               const Rectangle & rect);
+               const Rectangle & rect, int includeBoundary);
 
 }; // class RectangleIntersection
 
