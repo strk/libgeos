@@ -63,7 +63,8 @@ namespace tut
           using std::endl;
           using namespace geos::geom;
           bool eq = true;
-          if ( ! tolerance ) {
+          //if ( 0 && ! tolerance ) { ensure(false); // DISABLED 
+          if ( ! tolerance ) { 
 #if 1 // WARNING: this must be enabled !
             if ( a.getGeometryTypeId() == GEOS_GEOMETRYCOLLECTION ) {
               eq = b.getGeometryTypeId() == GEOS_GEOMETRYCOLLECTION;
@@ -216,7 +217,7 @@ namespace tut
       doLineClipTest(
         "LINESTRING (0 3,0 5,2 7)",
         //"LINESTRING (0 5,2 7)",
-        "LINESTRING (0 3,0 5,2 7)",
+        "MULTILINESTRING ((0 5, 2 7), (0 3, 0 5))", // overlay-op result
         Rectangle(0,0,10,10)
       );
     }
@@ -226,7 +227,8 @@ namespace tut
     {
       doLineClipTest(
         "LINESTRING (2 1,0 0,1 2)",
-        "LINESTRING (2 1,0 0,1 2)",
+        //"LINESTRING (2 1,0 0,1 2)",
+        "MULTILINESTRING ((0 0, 2 1), (0 0, 1 2))", // overlay-op result
         Rectangle(0,0,10,10)
       );
     }
@@ -257,7 +259,8 @@ namespace tut
     {
       doLineClipTest(
         "LINESTRING (3 3,0 6,3 9)",
-        "LINESTRING (3 3,0 6,3 9)",
+        //"LINESTRING (3 3,0 6,3 9)",
+        "MULTILINESTRING ((0 6, 3 9), (0 6, 3 3))", // overlay-op result
         Rectangle(0,0,10,10)
       );
     }
@@ -327,7 +330,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((0 0,10 0,5 10,0 0))",
-        "LINESTRING (10 0,5 10,0 0)",
+        //"LINESTRING (10 0,5 10,0 0)",
+        "MULTILINESTRING ((5 10, 10 0), (0 0, 5 10))", // overlay-op result
         Rectangle(0,0,10,10)
       );
     }
@@ -378,7 +382,7 @@ namespace tut
       doLineClipTest(
         "POLYGON ((-10 5,10 10,10 5,-10 5))",
       //"MULTILINESTRING ((0.0 7.5,10 10),(10 5,0 5))",
-        "MULTILINESTRING ((0.0 7.5,10 10),(10 10,10 5,0 5))",
+        "LINESTRING (0 5, 10 5, 10 10, 0 7.5)", // overlay-op result
         Rectangle(0,0,10,10)
       );
     }
@@ -519,7 +523,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((0 10,10 10,5 0,0 10))",
-        "LINESTRING (10 10,5 0,0 10)",
+        //"LINESTRING (10 10,5 0,0 10)",
+        "MULTILINESTRING ((5 0, 10 10), (0 10, 5 0))", // overlay-op result
         Rectangle(0,0,10,10)
       );
     }
@@ -546,7 +551,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((0 10,10 5,0 5,0 10))",
-        "LINESTRING (0 10,10 5,0 5)",
+        //"LINESTRING (0 10,10 5,0 5)",
+        "MULTILINESTRING ((0 10, 10 5), (0 5, 10 5))", // overlay-op result
         Rectangle(0,0,10,10)
       );
     }
@@ -555,7 +561,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((0 10,10 0,0 5,0 10))",
-        "LINESTRING (0 10,10 0,0 5)",
+        //"LINESTRING (0 10,10 0,0 5)",
+        "MULTILINESTRING ((0 10, 10 0), (0 5, 10 0))", // overlay-op result
         Rectangle(0,0,10,10)
       );
     }
@@ -564,7 +571,8 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((0 10,5 0,0 5,0 10))",
-        "LINESTRING (0 10,5 0,0 5)",
+        //"LINESTRING (0 10,5 0,0 5)",
+        "MULTILINESTRING ((0 10, 5 0), (0 5, 5 0))", // overlay-op result
         Rectangle(0,0,10,10)
       );
     }
@@ -932,7 +940,7 @@ namespace tut
       doClipTest(
         "LINESTRING (0 3,0 5,0 7)",
         //"GEOMETRYCOLLECTION EMPTY",
-        "LINESTRING (0 3,0 5,0 7)",
+        "MULTILINESTRING ((0 5, 0 7), (0 3, 0 5))", // overlay-op result
         Rectangle(0,0,10,10)
       );
     }
@@ -964,7 +972,8 @@ namespace tut
     {
       doClipTest(
         "LINESTRING (2 1,0 0,1 2)",
-        "LINESTRING (2 1,0 0,1 2)",
+        //"LINESTRING (2 1,0 0,1 2)",
+        "MULTILINESTRING ((0 0, 2 1), (0 0, 1 2))",
         Rectangle(0,0,10,10)
       );
     }
@@ -975,7 +984,7 @@ namespace tut
       doClipTest(
         "LINESTRING (3 3,0 3,0 5,2 7)",
         //"MULTILINESTRING ((3 3,0 3),(0 5,2 7))",
-        "LINESTRING (3 3,0 3,0 5,2 7)",
+        "MULTILINESTRING ((0 5, 2 7), (0 3, 3 3), (0 3, 0 5))", // overlay-op result
         Rectangle(0,0,10,10)
       );
     }
@@ -995,7 +1004,8 @@ namespace tut
     {
       doClipTest(
         "LINESTRING (3 3,0 6,3 9)",
-        "LINESTRING (3 3,0 6,3 9)",
+        //"LINESTRING (3 3,0 6,3 9)",
+        "MULTILINESTRING ((0 6, 3 9), (0 6, 3 3))", // overlay-op result
         Rectangle(0,0,10,10)
       );
     }
@@ -1521,7 +1531,7 @@ namespace tut
         "POLYGON ((-15 -15,-15 15,15 15,15 -15,-15 -15),(0 5,-1 5,-1 6,0 6,0 5))",
         // this version has counterclockwise hole 
         //"POLYGON((-15 -15,-15 15,15 15,15 -15,-15 -15),(0 5,0 6,-1 6,-1 5,0 5))",
-        "POLYGON ((0 0,0 10,10 10,10 0,0 0))",
+        "POLYGON ((0 0, 0 5, 0 6, 0 10, 10 10, 10 0, 0 0))", // overlay-op result
         Rectangle(0,0,10,10)
       );
     }
@@ -1584,6 +1594,7 @@ namespace tut
                 "(4 -2, 6 -2, 6 0, 4 0, 4 -2)" // bottom edge
                 ")";
       const char *exp =
+        // overlay-op result:
         "POLYGON ((0 0, 0 4, 0 6, 0 10, 4 10, 6 10, 10 10, 10 6, 10 4, 10 0, 6 0, 4 0, 0 0))";
 
 // WARNING: the tester fails to detect this discrepancy:
