@@ -420,7 +420,7 @@ RectangleIntersectionBuilder::close_ring(const Rectangle & rect,
 
 
 void
-RectangleIntersectionBuilder::reconnectPolygons(const Rectangle & rect, bool cwshell)
+RectangleIntersectionBuilder::reconnectPolygons(const Rectangle & rect)
 {
 #if GEOS_DEBUG
   Trace _t("RectangleIntersectionBuilder::reconnectPolygons");
@@ -447,8 +447,6 @@ RectangleIntersectionBuilder::reconnectPolygons(const Rectangle & rect, bool cws
 	}
   else
 	{
-    if ( ! cwshell ) reverseLines();
-
 	  // Reconnect all lines into one or more linearrings
 	  // using box boundaries if necessary
 

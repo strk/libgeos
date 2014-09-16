@@ -85,7 +85,7 @@ private:
    * 1. Build exterior ring(s) from lines
    * 2. Attach polygons as holes to the exterior ring(s)
    */
-  void reconnectPolygons(const Rectangle & rect, bool cwshell);
+  void reconnectPolygons(const Rectangle & rect);
 
   /**
    * Reconnect disjointed parts
@@ -121,6 +121,7 @@ private:
 
   // Trivial methods
   bool empty() const;
+  bool hasLines() const { return ! lines.empty(); }
   size_t size() const;
   void clear();
 

@@ -185,8 +185,6 @@ RectangleIntersection::clip_linestring_parts(const geom::LineString * gi,
 						   RectangleIntersectionBuilder & parts,
 						   const Rectangle & rect, int includeBoundary)
 {
-  using namespace geos::geom;
-
 #if GEOS_DEBUG
   Trace _t("RectangleIntersection::clip_linestring_parts");
 #endif
@@ -590,6 +588,8 @@ RectangleIntersection::clip_polygon_to_linestrings(const geom::Polygon * g,
   if(g == NULL || g->isEmpty())
 	return;
 
+  using geos::algorithm::CGAlgorithms;
+
   // Clip the exterior first to see what's going on
 
   RectangleIntersectionBuilder parts(*_gf);
@@ -634,7 +634,6 @@ RectangleIntersection::clip_polygon_to_linestrings(const geom::Polygon * g,
     const LineString* lr = g->getInteriorRingN(i);
     // include boundaries going around rectangle with the same
     // winding of the hole (counterclockwise if ring is counterclockwise)
-    using geos::algorithm::CGAlgorithms;
     int incBounds = CGAlgorithms::isCCW(lr->getCoordinatesRO()) ? 1 : 2;
 	  if(clip_linestring_parts(lr, parts, rect, incBounds))
 		{
@@ -668,6 +667,8 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
   Trace _t("RectangleIntersection::clip_polygon_to_polygons");
 #endif
 
+  using geos::algorithm::CGAlgorithms;
+
   if(g == NULL || g->isEmpty())
 	return;
 
@@ -689,7 +690,6 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
   // If there were no intersections, the outer ring might be
   // completely outside.
 
-  using geos::algorithm::CGAlgorithms;
   if( parts.empty() )
   {
     const Coordinate rectCorner(rect.xmin(), rect.ymin());
@@ -703,6 +703,13 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
     {
       // fully wraps the rectangle
 	    toParts.shellCoversRect = parts.shellCoversRect = true; 
+    }
+  }
+  else
+  {
+    const LineString *shell = g->getExteriorRing();
+    if ( CGAlgorithms::isCCW(shell->getCoordinatesRO()) ) {
+      parts.reverseLines();
     }
   }
 
@@ -727,8 +734,8 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
     const LineString* lr = g->getInteriorRingN(i);
     // include boundaries going around rectangle with the same
     // winding of the hole (counterclockwise if ring is counterclockwise)
-    using geos::algorithm::CGAlgorithms;
-    int incBounds = CGAlgorithms::isCCW(lr->getCoordinatesRO()) ? 1 : 2;
+    bool isCCW = CGAlgorithms::isCCW(lr->getCoordinatesRO());
+    int incBounds = isCCW ? 1 : 2;
 	  if(clip_linestring_parts(lr, holeparts, rect, incBounds))
 		{
 #if GEOS_DEBUG
@@ -746,10 +753,14 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
 	  else
 		{
 #if GEOS_DEBUG
-      std::cout << "Hole " << i << " parts are " << holeparts << std::endl;
+      std::cout << "Hole " << i << " (" << (isCCW ? "counter" : "" ) << "clockwise) parts are " << holeparts << std::endl;
 #endif
-		  if(!holeparts.empty())
+		  if(!holeparts.empty()) 
 			{
+        if ( ! isCCW ) holeparts.reverseLines();
+#if GEOS_DEBUG
+      std::cout << "after reverseLines, hole " << i << " parts are " << holeparts << std::endl;
+#endif
 			  holeparts.reconnect();
 #if GEOS_DEBUG
       std::cout << "after reconnect, hole " << i << " parts are " << holeparts << std::endl;
@@ -758,7 +769,6 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
 			}
 		  else
 			{
-        using geos::algorithm::CGAlgorithms;
 			  if( CGAlgorithms::isPointInRing(Coordinate(rect.xmin(), rect.ymin()),
             g->getInteriorRingN(i)->getCoordinatesRO()) )
 				{
@@ -776,13 +786,7 @@ RectangleIntersection::clip_polygon_to_polygons(const geom::Polygon * g,
   std::cout << "by the end of clip_polygon_to_polygons, parts are " << parts << std::endl;
 #endif
 
-  bool cwshell = true;
-  if ( ! toParts.shellCoversRect ) {
-    using geos::algorithm::CGAlgorithms;
-    const LineString *shell = g->getExteriorRing();
-    cwshell = !CGAlgorithms::isCCW(shell->getCoordinatesRO());
-  }
-  parts.reconnectPolygons(rect, cwshell);
+  parts.reconnectPolygons(rect);
 
   parts.release(toParts);
 

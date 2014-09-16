@@ -1610,4 +1610,32 @@ namespace tut
       doClipTest(inp, exp, r);
     }
 
+    // Clockwise shell, clockwise hole (both clipped)
+    template<> template<> void object::test<205>()
+    {
+      Rectangle r(0,0,10,10);
+      const char *inp =
+        "POLYGON ("
+          "(-10 2,-10 8,8 8,8 2,-10 2)," // CW
+          "(-5 6,5 6,5 4,-5 4,-5 6)"     // CW
+        ")";
+      const char *exp =
+        "POLYGON((0 8,8 8, 8 2, 0 2, 0 4, 5 4, 5 6, 0 6, 0 8))";
+      doClipTest(inp, exp, r);
+    }
+
+    // Counterclockwise shell, clockwise hole (both clipped)
+    template<> template<> void object::test<206>()
+    {
+      Rectangle r(0,0,10,10);
+      const char *inp =
+        "POLYGON ("
+          "(-10 2,8 2,8 8,-10 8,-10 2)," // CCW
+          "(-5 6,5 6,5 4,-5 4,-5 6)"     // CW
+        ")";
+      const char *exp =
+        "POLYGON((0 8,8 8, 8 2, 0 2, 0 4, 5 4, 5 6, 0 6, 0 8))";
+      doClipTest(inp, exp, r);
+    }
+
 }
