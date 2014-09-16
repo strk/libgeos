@@ -327,9 +327,7 @@ namespace tut
     {
       doLineClipTest(
         "POLYGON ((0 0,10 0,5 10,0 0))",
-        //"LINESTRING (10 0,5 10,0 0)",
-        //"POLYGON ((0 0,10 0,5 10,0 0))",
-        "MULTILINESTRING ((10 0, 5 10), (5 10, 0 0))",
+        "LINESTRING (10 0,5 10,0 0)",
         Rectangle(0,0,10,10)
       );
     }
