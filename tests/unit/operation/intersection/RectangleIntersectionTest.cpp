@@ -1656,4 +1656,28 @@ namespace tut
       doClipTest(inp, exp, r);
     }
 
+    // CW shell shares edge
+    template<> template<> void object::test<208>()
+    {
+      Rectangle r(0,0,10,10);
+      const char *inp =
+        "POLYGON ((10 0, 10 10, 20 10, 10 0))";
+      const char *exp =
+        "LINESTRING(10 0, 10 10)";
+      doClipTest(inp, exp, r);
+    }
+
+#if 0 // fails
+    // CCW shell shares edge
+    template<> template<> void object::test<209>()
+    {
+      Rectangle r(0,0,10,10);
+      const char *inp =
+        "POLYGON ((10 0, 20 10, 10 10, 10 0))";
+      const char *exp =
+        "LINESTRING(10 0, 10 10)";
+      doClipTest(inp, exp, r);
+    }
+#endif
+
 }
