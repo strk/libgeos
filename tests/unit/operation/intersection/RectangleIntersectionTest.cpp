@@ -65,13 +65,11 @@ namespace tut
           bool eq = true;
           //if ( 0 && ! tolerance ) { ensure(false); // DISABLED 
           if ( ! tolerance ) { 
-#if 1 // WARNING: this must be enabled !
             if ( a.getGeometryTypeId() == GEOS_GEOMETRYCOLLECTION ) {
               eq = b.getGeometryTypeId() == GEOS_GEOMETRYCOLLECTION;
             } else if ( b.getGeometryTypeId() == GEOS_GEOMETRYCOLLECTION ) {
               eq = false;
             }
-#endif
             if ( eq ) eq = a.equals(&b);
             if  ( ! eq ) {
               cout << "OBTAINED: " << wktwriter.write(&b) << endl;
@@ -1644,6 +1642,17 @@ namespace tut
         ")";
       const char *exp =
         "POLYGON((0 8,8 8, 8 2, 0 2, 0 4, 5 4, 5 6, 0 6, 0 8))";
+      doClipTest(inp, exp, r);
+    }
+
+    // Rectangle with second point on the right edge
+    template<> template<> void object::test<207>()
+    {
+      Rectangle r(0,0,10,10);
+      const char *inp =
+        "POLYGON ((10 0,0 -10,-10 0,0 10,10 0))";
+      const char *exp =
+        "POLYGON ((0 10, 10 0, 0 0, 0 10))";
       doClipTest(inp, exp, r);
     }
 

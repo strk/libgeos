@@ -455,10 +455,13 @@ std::cout << " Adding point!" << std::endl;
           else if ( wantsPoint(includeBoundary) && x == cs[i-1].x && y == cs[i-1].y )
           {
             // skip adding the point if previous one was inside or on edge
-            if ( i < 2 || rect.position(cs[i-2].x, cs[i-2].y) == Rectangle::Outside )
+            int pi = i-2;
+            // check second-to-last point if this was the second point
+            if ( pi < 0 && n > 2 ) pi = n-2;
+            if ( pi < 0 || rect.position(cs[pi].x, cs[pi].y) == Rectangle::Outside )
             {
 #if GEOS_DEBUG
-std::cout << " adding point (" << i << ") " << cs[i-1] << " -- position of point " << (i-2) << " " << cs[i-2] << " is " << rect.position(cs[i-2].x, cs[i-2].y) << std::endl;
+std::cout << " adding point (" << i << ") " << cs[i-1] << " -- position of point " << (i-2) << " " << cs[i-2] << " is " << rect.position(cs[i-2].x, cs[i-2].y) << " includeBoundary is " << includeBoundary << std::endl;
 #endif
               // in-or-edge to outside
               geom::Point *point = _gf->createPoint(cs[i-1]);
