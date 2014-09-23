@@ -78,6 +78,7 @@ using PlanarGraph::findEdge;
 private:
 
 	const geom::Geometry* parentGeom;
+	const geom::Envelope* targetEnv;
 
 	/**
 	 * The lineEdgeMap is a map of the linestring components of the
@@ -157,6 +158,9 @@ private:
     // Declare type as noncopyable
     GeometryGraph(const GeometryGraph& other);
     GeometryGraph& operator=(const GeometryGraph& rhs);
+    // Non default-constructible
+	  GeometryGraph();
+
 
 public:
 
@@ -168,12 +172,12 @@ public:
 	             const algorithm::BoundaryNodeRule& boundaryNodeRule,
 	                                            int boundaryCount);
 
-	GeometryGraph();
-
-	GeometryGraph(int newArgIndex, const geom::Geometry *newParentGeom);
+	GeometryGraph(int newArgIndex, const geom::Geometry *newParentGeom,
+	                               const geom::Envelope *newTargetEnv=0);
 
 	GeometryGraph(int newArgIndex, const geom::Geometry *newParentGeom,
-	              const algorithm::BoundaryNodeRule& boundaryNodeRule);
+	              const algorithm::BoundaryNodeRule& boundaryNodeRule,
+	              const geom::Envelope *newTargetEnv=0);
 
 	virtual ~GeometryGraph();
 

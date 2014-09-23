@@ -222,6 +222,7 @@ void
 GeometryGraph::addPoint(const Point *p)
 {
 	const Coordinate& coord=*(p->getCoordinate());
+  if ( targetEnv && ! targetEnv->covers(coord) ) return;
 	insertPoint(argIndex, coord, Location::INTERIOR);
 }
 
@@ -277,6 +278,9 @@ GeometryGraph::addPolygonRing(const LinearRing *lr, int cwLeft, int cwRight)
 void
 GeometryGraph::addPolygon(const Polygon *p)
 {
+  if ( targetEnv && ! targetEnv->intersects(p->getEnvelopeInternal()) )
+    return;
+
 	const LineString* ls;
 	const LinearRing* lr;
 
@@ -299,6 +303,9 @@ GeometryGraph::addPolygon(const Polygon *p)
 void
 GeometryGraph::addLineString(const LineString *line)
 {
+  if ( targetEnv && ! targetEnv->intersects(line->getEnvelopeInternal()) )
+    return;
+
 	CoordinateSequence* coord=CoordinateSequence::removeRepeatedPoints(line->getCoordinatesRO());
 	if(coord->getSize()<2) {
 		hasTooFewPointsVar=true;
@@ -532,12 +539,14 @@ GeometryGraph::getInvalidPoint()
 }
 
 GeometryGraph::GeometryGraph(int newArgIndex,
-		const geom::Geometry *newParentGeom)
+		const geom::Geometry *newParentGeom,
+		const geom::Envelope *newTargetEnv)
 	:
 	PlanarGraph(),
 	parentGeom(newParentGeom),
+	targetEnv(newTargetEnv),
 	useBoundaryDeterminationRule(true),
-    boundaryNodeRule(algorithm::BoundaryNodeRule::getBoundaryOGCSFS()),
+  boundaryNodeRule(algorithm::BoundaryNodeRule::getBoundaryOGCSFS()),
 	argIndex(newArgIndex),
 	hasTooFewPointsVar(false)
 {
@@ -546,10 +555,12 @@ GeometryGraph::GeometryGraph(int newArgIndex,
 
 GeometryGraph::GeometryGraph(int newArgIndex,
 		const geom::Geometry *newParentGeom,
-		const algorithm::BoundaryNodeRule& bnr)
+		const algorithm::BoundaryNodeRule& bnr,
+		const geom::Envelope *newTargetEnv)
 	:
 	PlanarGraph(),
 	parentGeom(newParentGeom),
+	targetEnv(newTargetEnv),
 	useBoundaryDeterminationRule(true),
 	boundaryNodeRule(bnr),
 	argIndex(newArgIndex),
@@ -557,18 +568,6 @@ GeometryGraph::GeometryGraph(int newArgIndex,
 {
 	if (parentGeom!=NULL) add(parentGeom);
 }
-
-GeometryGraph::GeometryGraph()
-	:
-	PlanarGraph(),
-	parentGeom(NULL),
-	useBoundaryDeterminationRule(true),
-    boundaryNodeRule(algorithm::BoundaryNodeRule::getBoundaryOGCSFS()),
-	argIndex(-1),
-	hasTooFewPointsVar(false)
-{
-}
-
 
 /* public static */
 int

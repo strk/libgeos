@@ -36,7 +36,7 @@ namespace operation { // geos.operation
 //LineIntersector* GeometryGraphOperation::li=new LineIntersector();
 
 GeometryGraphOperation::GeometryGraphOperation(const Geometry *g0,
-		const Geometry *g1)
+		const Geometry *g1, const Envelope *env)
 	:
 	arg(2)
 {
@@ -53,14 +53,15 @@ GeometryGraphOperation::GeometryGraphOperation(const Geometry *g0,
 		setComputationPrecision(pm1);
 
 	arg[0]=new GeometryGraph(0, g0,
-        algorithm::BoundaryNodeRule::getBoundaryOGCSFS());
+        algorithm::BoundaryNodeRule::getBoundaryOGCSFS(), env);
 	arg[1]=new GeometryGraph(1, g1,
-		algorithm::BoundaryNodeRule::getBoundaryOGCSFS());
+		algorithm::BoundaryNodeRule::getBoundaryOGCSFS(), env);
 }
 
 GeometryGraphOperation::GeometryGraphOperation(const Geometry *g0,
 		const Geometry *g1,
-		const algorithm::BoundaryNodeRule& boundaryNodeRule)
+		const algorithm::BoundaryNodeRule& boundaryNodeRule,
+    const Envelope *env)
 	:
 	arg(2)
 {
@@ -76,8 +77,8 @@ GeometryGraphOperation::GeometryGraphOperation(const Geometry *g0,
 	else
 		setComputationPrecision(pm1);
 
-	arg[0]=new GeometryGraph(0, g0, boundaryNodeRule);
-	arg[1]=new GeometryGraph(1, g1, boundaryNodeRule);
+	arg[0]=new GeometryGraph(0, g0, boundaryNodeRule, env);
+	arg[1]=new GeometryGraph(1, g1, boundaryNodeRule, env);
 }
 
 
