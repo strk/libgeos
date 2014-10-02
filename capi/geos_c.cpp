@@ -723,13 +723,17 @@ GEOS_setWKBByteOrder(int byteOrder)
 	return GEOS_setWKBByteOrder_r( handle, byteOrder );
 }
 
-
 CoordinateSequence *
 GEOSCoordSeq_create(unsigned int size, unsigned int dims)
 {
     return GEOSCoordSeq_create_r( handle, size, dims );
 }
 
+CoordinateSequence *
+GEOSCoordSeq_createXYZ(unsigned int size, double *x, double *y, double *z)
+{
+    return GEOSCoordSeq_createXYZ_r( handle, size, x, y, z );
+}
 int
 GEOSCoordSeq_setOrdinate(CoordinateSequence *s, unsigned int idx, unsigned int dim, double val)
 {

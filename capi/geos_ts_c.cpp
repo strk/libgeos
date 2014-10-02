@@ -119,6 +119,7 @@ using geos::geom::Geometry;
 using geos::geom::LineString;
 using geos::geom::Polygon;
 using geos::geom::CoordinateSequence;
+using geos::geom::Coordinate;
 using geos::geom::GeometryFactory;
 
 using geos::io::WKTReader;
@@ -3504,6 +3505,56 @@ GEOSCoordSeq_create_r(GEOSContextHandle_t extHandle, unsigned int size, unsigned
     }
     catch (...)
     {
+        handle->ERROR_MESSAGE("Unknown exception thrown");
+    }
+    
+    return NULL;
+}
+
+CoordinateSequence *
+GEOSCoordSeq_createXYZ_r(GEOSContextHandle_t extHandle, unsigned int size, double *x, double *y, double *z)
+{
+    if ( 0 == extHandle )
+    {
+        return NULL;
+    }
+
+    GEOSContextHandleInternal_t *handle = 0;
+    handle = reinterpret_cast<GEOSContextHandleInternal_t*>(extHandle);
+    if ( 0 == handle->initialized )
+    {
+        return NULL;
+    }
+
+    std::vector<Coordinate> *coordinates = new std::vector<Coordinate>(size);
+    try
+    {
+        if ( z ) {
+          for (unsigned i=0; i<size; ++i) {
+            Coordinate& c = (*coordinates)[i];
+            c.x = x[i];
+            c.y = y[i];
+            c.z = z[i];
+          }
+        } else {
+          for (unsigned i=0; i<size; ++i) {
+            Coordinate& c = (*coordinates)[i];
+            c.x = x[i];
+            c.y = y[i];
+          }
+        }
+
+        const GeometryFactory *gf = handle->geomFactory;
+        return gf->getCoordinateSequenceFactory()->create(coordinates, z?3:2);
+    }
+    catch (const std::exception &e)
+    {
+        delete coordinates;
+        handle->ERROR_MESSAGE("%s", e.what());
+    }
+    catch (...)
+    {
+        delete coordinates;
         handle->ERROR_MESSAGE("Unknown exception thrown");
     }
     

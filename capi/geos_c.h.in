@@ -238,6 +238,18 @@ extern GEOSCoordSequence GEOS_DLL *GEOSCoordSeq_create_r(
                                                 unsigned int dims);
 
 /*
+ * Create a Coordinate sequence with ``size'' coordinates
+ * of either 2 or 3 dimensions (depending on z being null or not)
+ * Return NULL on exception.
+ */
+extern GEOSCoordSequence GEOS_DLL *GEOSCoordSeq_createXYZ_r(
+                                                GEOSContextHandle_t handle,
+                                                unsigned int size,
+                                                double *x, 
+                                                double *y,
+                                                double *z);
+
+/*
  * Clone a Coordinate Sequence.
  * Return NULL on exception.
  */
@@ -1174,6 +1186,17 @@ extern unsigned char GEOS_DLL *GEOSGeomToHEX_buf(const GEOSGeometry* g, size_t *
  * Return NULL on exception.
  */
 extern GEOSCoordSequence GEOS_DLL *GEOSCoordSeq_create(unsigned int size, unsigned int dims);
+
+/*
+ * Create a Coordinate sequence with ``size'' coordinates
+ * of either 2 or 3 dimensions (depending on z being null or not)
+ * Return NULL on exception.
+ */
+extern GEOSCoordSequence GEOS_DLL *GEOSCoordSeq_createXYZ(
+                                                unsigned int size,
+                                                double *x, 
+                                                double *y,
+                                                double *z);
 
 /*
  * Clone a Coordinate Sequence.
