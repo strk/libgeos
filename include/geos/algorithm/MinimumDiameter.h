@@ -55,6 +55,9 @@ class GEOS_DLL MinimumDiameter {
 private:
 	const geom::Geometry* inputGeom;
 	bool isConvex;
+
+	geom::CoordinateSequence* convexHullPts;
+
 	geom::LineSegment* minBaseSeg;
 	geom::Coordinate* minWidthPt;
 	int minPtIndex;
@@ -76,6 +79,10 @@ private:
 
 	static unsigned int getNextIndex(const geom::CoordinateSequence* pts,
 		unsigned int index);
+
+	static double computeC(double a, double b, const geom::Coordinate &p);
+
+	static geom::LineSegment computeSegmentForLine(double a, double b, double c);
 
 public:
 	~MinimumDiameter();
@@ -126,6 +133,17 @@ public:
 	 * @return a LineString which is a minimum diameter
 	 */
 	geom::LineString* getDiameter();
+
+	/**
+	 * Gets the minimum rectangular Polygon which encloses the input geometry. The rectangle has width
+	 * equal to the minimum diameter, and a longer length. If the convex hill of the input is degenerate
+	 * (a line or point) a LineString or Point is returned.
+	 * The minimum rectangle can be used as an extremely generalized representation for the given
+	 * geometry.
+	 *
+	 * @return the minimum rectangle enclosing the input (or a line or point if degenerate)
+	 */
+	geom::Geometry* getMinimumRectangle();
 };
 
 } // namespace geos::algorithm
