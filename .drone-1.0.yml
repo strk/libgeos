@@ -26,4 +26,5 @@ steps:
   - name: docs
     image: *test-image
     commands:
-      - make doxygen
+      - make doxygen 2> doxygen.err
+      - ! grep -v '\(not documented\|ignoring unsupported taz\)' doxygen.err
